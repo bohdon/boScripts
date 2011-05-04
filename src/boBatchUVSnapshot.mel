@@ -1,0 +1,152 @@
+/*
+	Batch UV Snapshot
+	1.2
+
+	Copyright (c) 2010 Bohdon Sayre
+	All Rights Reserved.
+	bo@bohdon.com
+	Credit to Nick Matthews, Marcus Ng, Chanelle de Nysschen for the idea!
+
+	Description:
+		A GUI for outputting uv snapshots of multiple objects at once.
+		Simple and efficient options for size and format.
+
+	unique prefix: bbchuv
+
+	Version 1.2:
+	    > Updated GUI to work with 2011
+		> Option to save in sourceimages or images
+		> Snapshots are saved as "outUV_<objectName>.ext"
+		> Creates a uv snapshot of all selected objects
+
+	Feel free to email me with any bugs, comments, or requests!
+*/
+
+
+/** Main window procedure **/
+global proc boBatchUVSnapshot() {
+	//window name
+	$win = "bbchuvWin";
+	
+	//check for pre-existing window
+	if (`window -ex $win`) deleteUI -wnd $win;
+	
+	//create window
+	window -rtf 1 -mb 0 -mxb 0 -t "Batch UV Snapshots" $win;
+    
+	//main layout
+	string $form = `formLayout -nd 100`;
+		
+		//form contents
+		string $txt = `text -l "Size"`;
+		intField -v 1024 -w 50 bbchuvInt;
+		intSlider -w 100 -min 4 -max 13 -v 10 -s 1
+			-dc "{int $v = `intSlider -q -v bbchuvSlider`; intField -e -v `pow 2 $v`  bbchuvInt;}"
+			-cc "{int $v = `intSlider -q -v bbchuvSlider`; intField -e -v `pow 2 $v`  bbchuvInt;}"
+			bbchuvSlider;
+		string $sep = `separator -h 4 -st "in"`;
+		string $txt3 = `text -l "File Type"`;
+		optionMenu -w 60 bbchuvOptionMenu;
+			menuItem -l "iff";
+			menuItem -l "jpg";
+			menuItem -l "png";
+			menuItem -l "tga";
+			menuItem -l "tif";
+		optionMenu -e -sl 5 bbchuvOptionMenu;
+		checkBox -l "Anti-alias lines" -v 1 -al "left" bbchuvCheckBox;
+		string $sep2 = `separator -h 4 -st "in"`;
+		radioButtonGrp -nrb 2 -cw3 58 90 50 -l "Destination" -l1 "/sourceimages" -l2 "/images" -sl 1 bbchuvDestRadio;
+		string $txt2 = `text -en 0 -al "center" -l "files will be saved as outUV_objectName.ext"`;
+		string $button1 = `button -l "Output UVs"
+			-ann "Select multiple objects, then click Output UVs to snapshot all objects at once"
+			-c "bbchuvWinButton1Command"`;
+		string $button2 = `button -l "Close" -c ("deleteUI -wnd "+$win+";")`;
+		
+	//edit form
+	formLayout -e
+		-af $txt "top" 12 -ap $txt "left" -88 50
+		-af bbchuvInt "top" 10 -ac bbchuvInt "left" 8 $txt
+		-af bbchuvSlider "top" 12 -ac bbchuvSlider "left" 5 bbchuvInt
+		
+		-ac $sep "top" 9 $txt -af $sep "left" 8 -af $sep "right" 8
+		
+		-ac $txt3 "top" 9 $sep -ap $txt3 "left" -100 50
+		-ac bbchuvOptionMenu "top" 6 $sep -ac bbchuvOptionMenu "left" 5 $txt3
+		-ac bbchuvCheckBox "top" 8 $sep -ac bbchuvCheckBox "left" 8 bbchuvOptionMenu
+		
+		-ac $sep2 "top" 6 bbchuvOptionMenu -af $sep2 "left" 8 -af $sep2 "right" 8
+		
+		-ac bbchuvDestRadio "top" 10 $sep2 -aoc bbchuvDestRadio "left" -6 $txt3
+		
+		-ac $txt2 "bottom" 2 $button1 -ap $txt2 "left" 0 0 -ap $txt2 "right" 0 100
+		-af $button1 "bottom" 2 -ap $button1 "left" 2 0 -ap $button1 "right" 2 50
+		-af $button2 "bottom" 2 -ap $button2 "left" 2 50 -ap $button2 "right" 2 100
+		$form;
+	
+    if (`windowPref -q -ex $win`)
+        windowPref -e -w 240 -h 180 $win;
+	window -e -w 240 -h 180 $win;
+	showWindow $win;
+}
+
+/** Grabs values from the GUI and runs bbchuvRun **/
+global proc bbchuvWinButton1Command() {
+	if (!`window -ex bbchuvWin`)
+		return;
+	
+	string $objs[] = `ls -sl`;
+	string $imageType = `optionMenu -q -v bbchuvOptionMenu`;
+	int $size = `intField -q -v bbchuvInt`;
+	int $rad = `radioButtonGrp -q -sl bbchuvDestRadio`;
+	string $dest = ( $rad == 1 ? "sourceimages" : "images" );
+	
+	string $results[] = bbchuvRun($objs, $dest, $imageType, $size);
+	
+	
+	if ( !size($results) ) {
+		print ("// no uv snapshots were output..\n");
+	} else {
+		print ("// output " + size($results) + " uv snapshot(s) to /" + $dest + " successfully!\n");
+	}
+}
+
+
+/** Executes the uv snapshots **/
+global proc string[] bbchuvRun(string $objs[], string $dest, string $fileFormat, int $res) {
+	//we will use $objs as the source of uvs,
+	//but selList is for maintaining selection after the script
+	string $selList[] = `ls -sl`;
+	
+	if (!size($objs)) {
+		warning "no objects were selected...";
+		return {};
+	}
+	
+	if ($res > 8192) {
+		//let's not be ridiculous
+		error ("size ("+$res+") is too large. limit is 8192");
+	}
+	
+	string $ws = `workspace -q -fn`;
+	
+	int $outUvCount;
+	
+	string $results[];
+	for ($obj in $objs) {
+		if (size(`match "\\." $obj`))
+			continue;
+		
+		select -r $obj;
+		string $objShort = `match "[^|]*$" $obj`;
+		string $name = $ws + "/" + $dest + "/outUV_" + $objShort + "." + $fileFormat;
+		string $outUvs = ( $name );
+		refresh;
+		uvSnapshot -aa -o -ff $fileFormat -xr $res -yr $res -n $outUvs;
+		$results[size($results)] = $name;
+		$outUvCount++;
+	}
+	
+	select -r $selList;
+	
+	return $results;
+}
