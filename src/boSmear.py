@@ -19,9 +19,17 @@ Features:
 Feel free to email me with any bugs, comments, or requests!
 """
 
+# TODO:
+#   finish smear create lockup
+#   make smear control GUI
+#   improve resolution system
+#       perhaps have a way to determine how many edge lattice points, and maybe create a falloff
+#       overscan? also might be a helpful trick
+#       multiple smears on a single object
+
 from pymel.core import *
 
-__version__ = '3.0.0dev'
+__version__ = '3.0.0b'
 
 class SmearError(Exception):
     pass
@@ -167,7 +175,8 @@ class Smear(object):
         self._createDepthGuide()
         self._createMesh()
         self._connectMeshToLattice()
-        self._connectToCam()
+        self._createConstraints()
+        self._lockup()
     
     def _validateObjs(self):
         pass
@@ -266,10 +275,26 @@ class Smear(object):
         for y in range(self.res[1]):
             for x in range(self.res[0]):
                 for z in range(2):
-                    print 'hooking', i, ' -> ', x+1, y+1, z
                     self.meshShape.pnts[i] >> self.lattice.pt[x+1][y+1][z]
                 i += 1
     
-    def _connectToCam(self):
+    def _createConstraints(self):
+        self.camShape = self.cam.getShape()
+        filmAp = self.camShape.hfa.get()
+        self.meshScale.scaleX.set(1.2 * self.sX * (filmAp / 1.4173))
+        self.meshScale.scaleY.set(1.2 * self.sY * (filmAp / 1.4173))
+        # constrain lattice z-depth to target
+        pointConstraint(self.target, self.latticeFollow, skip=['x', 'y'], w=1)
+        # constrain cam child group to camera
+        parentConstraint(self.cam, self.camChild, w=1)
+        # create expression for the smear mesh to follow focal depths
+        scaleEq = ('35/{cam}.focalLength * - {lf}.translateZ'.format(cam=self.cam, lf=self.latticeFollow))
+        latticeExp = '{ls}.scaleX = {se};\r\n{ls}.scaleY = {se};'.format(ls=self.latticeScale, se=scaleEq)
+        meshExp = '{mo}.translateZ = ({cam}.focalLength)/-29;'.format(cam=self.cam, mo=self.meshOffset)
+        expression(s=latticeExp, o=self.latticeScale, ae=True, uc='all')
+        expression(s=meshExp, o=self.meshOffset, ae=True, uc='all')
+    
+    def _lockup(self):
         pass
+
 
