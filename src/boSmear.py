@@ -164,8 +164,8 @@ class Smear(object):
         self._validateObjs()
         self._createHierarchy()
         self._createLattice()
-        #self.createAttrs()
-        #self.createMesh()
+        self._createDepthGuide()
+        self._createMesh()
     
     def _validateObjs(self):
         pass
@@ -192,10 +192,53 @@ class Smear(object):
         #move into hierarchy
         parent(self.latticeGrp, self.latticeScale)
         resX, resY = self.res
-        sX = 1.0275 * float(resX+2)/resX
-        sY = 0.58 * float(resY+2)/resY
-        self.latticeGrp.scaleX.set(sX)
-        self.latticeGrp.scaleY.set(sY)
+        self.sX = 1.0275 * float(resX+2)/resX
+        self.sY = 0.58 * float(resY+2)/resY
+        self.latticeGrp.scaleX.set(self.sX)
+        self.latticeGrp.scaleY.set(self.sY)
         self.latticeGrp.visibility.set(False)
-
-
+    
+    def _createDepthGuide(self):
+        # create a cube using a single curve
+        p = 0.5
+        points = [(-p, -p,  p), ( p, -p,  p), ( p, -p, -p),
+                  (-p, -p, -p), (-p, -p,  p), (-p,  p,  p),
+                  ( p,  p,  p), ( p,  p, -p), (-p,  p, -p),
+                  (-p,  p,  p), ( p,  p,  p), ( p, -p,  p),
+                  ( p, -p, -p), ( p,  p, -p), (-p,  p, -p),
+                  (-p, -p, -p)]
+        self.depthGuide = curve(d=1, n='smearDepthBox', p=points, k=range(16))
+        parent(self.depthGuide, self.latticeScale)
+        self.depthGuide.scaleX.set(self.sX)
+        self.depthGuide.scaleY.set(self.sY)
+        self.depthGuide.overrideEnabled.set(True)
+        self.depthGuide.overrideDisplayType.set(1)
+    
+    def _createMesh(self):
+        """Create the smear mesh"""
+        resX, resY = self.res
+        self.mesh = polyPlane(w=1, h=1, sx=resX-1, sy=resY-1, ax=(0, 0, 1), cuv=2, ch=True, n='smearMesh')[0]
+        select(self.mesh)
+        mel.HighQualityDisplay()
+        # scale and freeze
+        sx, sy, sz = float(resX)/(resX+2), float(resY)/(resY+2), 1
+        scale(self.mesh, [sx, sy, sz], a=True, xyz=True)
+        makeIdentity(apply=True, t=True, r=True, s=True, n=1)
+        # delete history
+        delete(self.mesh, ch=True)
+        parent(self.mesh, self.meshScale)
+        self.meshShape = self.mesh.getShape()
+        # turn off render stats
+        attrs = ['castsShadows', 'receiveShadows', 'motionBlur', 'primaryVisibility',
+                 'smoothShading', 'visibleInReflections', 'visibleInRefractions', 'doubleSided']
+        for attr in attrs:
+            getattr(self.meshShape, attr).set(False)
+        # apply material
+        self.mesh_mtl = shadingNode('blinn', asShader=True, n='smear_mtl#')
+        self.mesh_sg = sets(renderable=True, noSurfaceShader=True, empty=True, n='smear_sg#')
+        self.mesh_mtl.outColor >> self.mesh_sg.surfaceShader
+        self.mesh_mtl.color.set((0.85, 0.85, 0.85))
+        self.mesh_mtl.transparency.set((0.9, 0.9, 0.9))
+        self.mesh_mtl.reflectivity.set(0)
+        sets(self.mesh_sg, e=True, fe=self.mesh)
+        # add attributes
