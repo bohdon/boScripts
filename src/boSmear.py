@@ -166,6 +166,8 @@ class Smear(object):
         self._createLattice()
         self._createDepthGuide()
         self._createMesh()
+        self._connectMeshToLattice()
+        self._connectToCam()
     
     def _validateObjs(self):
         pass
@@ -179,7 +181,8 @@ class Smear(object):
         self.latticeScale = group(em=True, n='smear_lattice_scale', p=self.latticeFollow)
     
     def _createLattice(self):
-        ffd, self.lattice, base = lattice(ignoreSelected=True, dv=self.res + [2], ldv=(4, 4, 4), cp=True, s=(1, 1, 1), n='smear#', pos=(0, 0, 0))
+        resX, resY = self.res
+        self.ffd, self.lattice, base = lattice(ignoreSelected=True, dv=[resX+2, resY+2, 2], ldv=(4, 4, 4), cp=True, s=(1, 1, 1), n='smear#', pos=(0, 0, 0))
         self.latticeGrp = self.lattice.getParent()
         # when a lattice is made, the vertex points are absolute, if a deformer
         # (such as a cluster) is applied a latticeShapeOrig is created which
@@ -191,7 +194,6 @@ class Smear(object):
         delete(newC)
         #move into hierarchy
         parent(self.latticeGrp, self.latticeScale)
-        resX, resY = self.res
         self.sX = 1.0275 * float(resX+2)/resX
         self.sY = 0.58 * float(resY+2)/resY
         self.latticeGrp.scaleX.set(self.sX)
@@ -242,3 +244,32 @@ class Smear(object):
         self.mesh_mtl.reflectivity.set(0)
         sets(self.mesh_sg, e=True, fe=self.mesh)
         # add attributes
+        self.mesh.addAttr('weight', at='double', min=0, max=1, dv=1, k=True)
+        self.mesh.addAttr('soften', at='long', min=2, max=12, dv=4, k=True)
+        self.mesh.addAttr('depthScale', at='double', dv=12, k=True)
+        self.mesh.addAttr('displayDepthGuide', at='long', min=0, max=1, dv=0, k=True)
+        self.mesh.addAttr('meshTransparency', at='double', min=0, max=1, dv=0.9, k=True)
+        # connect attrs
+        self.mesh.weight >> self.ffd.envelope
+        self.mesh.soften >> self.ffd.localInfluenceS
+        self.mesh.soften >> self.ffd.localInfluenceT
+        self.mesh.soften >> self.ffd.localInfluenceU
+        self.mesh.depthScale >> self.latticeScale.scaleZ
+        self.mesh.displayDepthGuide >> self.depthGuide.visibility
+        self.mesh.meshTransparency >> self.mesh_mtl.transparencyR
+        self.mesh.meshTransparency >> self.mesh_mtl.transparencyG
+        self.mesh.meshTransparency >> self.mesh_mtl.transparencyB
+    
+    def _connectMeshToLattice(self):
+        """Connect all points of the smear mesh to the corresponding lattice points"""
+        i = 0
+        for y in range(self.res[1]):
+            for x in range(self.res[0]):
+                for z in range(2):
+                    print 'hooking', i, ' -> ', x+1, y+1, z
+                    self.meshShape.pnts[i] >> self.lattice.pt[x+1][y+1][z]
+                i += 1
+    
+    def _connectToCam(self):
+        pass
+
