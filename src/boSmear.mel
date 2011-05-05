@@ -1,8 +1,8 @@
 /*
 	Smear
-	2.0.1
+	2.0.3
 	
-	Copyright © 2009 Bohdon Sayre
+	Copyright © 2011 Bohdon Sayre
 	All Rights Reserved.
 	bsayre@c.ringling.edu
 	
@@ -13,7 +13,8 @@
 	
 	unique prefix: bsm
 	
-	Version 2.0.1:
+	Version 2.0.3:
+	    > Fixes some issues in Maya 2011+ and some OSX issues
 		> Instant setup, no more waiting
 		> Huge speed improvement by using much simpler connections from the mesh control
 		> Much easier to animate and control animation with the new Controls window
@@ -33,7 +34,7 @@ global proc boSmear() {
 	if (`window -exists $bsmWin`) deleteUI -window $bsmWin;
 	
 	//create window
-	window  -w 100 -h 100 -rtf 1 -mb 1 -mxb 0 -mnc "window -e -t \"Smear 2.0.1\" bsmWin;" -t "Smear 2.0.1" $bsmWin;
+	window  -w 100 -h 100 -rtf 1 -mb 1 -mxb 0 -mnc "window -e -t \"Smear 2.0.3\" bsmWin;" -t "Smear 2.0.3" $bsmWin;
 	
 	formLayout -nd 100 bsmWin_MainForm;
 		frameLayout -lv 0 -bs "etchedIn" -mw 4 -mh 4 bsmSettingsFrame;
@@ -59,8 +60,7 @@ global proc boSmear() {
 				text -l "Target" -w 38 bsmTargetText;
 				textField -w 200 bsmTargetField;
 				button -w 50 -l "Get"
-						-c "if (size(`ls -sl`)) {string $selList[] = `ls -sl`;textField -e -tx $selList[0] bsmTargetField;}\
-							else {textField -e -tx \"\" bsmTargetField;}"
+						-c "if (size(`ls -sl`)) {string $selList[] = `ls -sl`;textField -e -tx $selList[0] bsmTargetField;} else {textField -e -tx \"\" bsmTargetField;}"
 						bsmTargetGet;
 				
 				//geometry
@@ -417,10 +417,9 @@ global proc bsmSmearControlsWin() {
 			optionMenu -l "Smear Mesh"
 				-cc "global string $bsmSmearMesh; $bsmSmearMesh = (`optionMenu -q -v bsmSmearControlsOptionMenu`+\"|smear_cameraChild|smear_mesh_offset|smear_mesh_scale|smearMesh\");"
 				bsmSmearControlsOptionMenu;
-				for($obj in $curSmears) {
-					menuItem -l $obj;
-				}
-				setParent ..;
+            for($obj in $curSmears) {
+                menuItem -l $obj;
+            }
 			button -l "Toggle Mesh Visibility" -c ("bsmSmearControl_toggleVis; setFocus `getPanel -wf`;");
 			button -l "Reset Mesh" -c ("bsmSmearControl_resetMesh; setFocus `getPanel -wf`;");
 			button -l "Key All Mesh Verts" -c ("bsmSmearControl_keyAllVerts; setFocus `getPanel -wf`;");
