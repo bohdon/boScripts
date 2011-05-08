@@ -57,7 +57,7 @@ class Gui(object):
                             btn1 = button(l='Refresh', h=20, w=54, c=Callback(self.loadInfo))
                             targetTxt = text(l='Target  ', al='right', w=tw)
                             targetField = self.uiTargetField = textField()
-                            btn2 = button(l='<<<', h=20, w=54, c=Callback(self.getTarget))
+                            btn2 = button(l='<<', h=20, w=30, c=Callback(self.getTarget))
                             resTxt = text(l='Resolution  ', al='right', w=tw)
                             resX = self.uiResXField = intField(v=18, min=1, max=100, w=30)
                             resDivTxt = text(l='x')
@@ -143,6 +143,7 @@ class Gui(object):
         geo = [PyNode(x) for x in self.uiGeoList.getAllItems()]
         s = Smear(cam, target, res, geo)
         s.create()
+        s.addGeometry(geo)
 
 
 class ControlGui(object):
@@ -152,6 +153,8 @@ class ControlGui(object):
         
         with window('bsmControlWin', t='Smear Control {0}'.format(__version__)):
             pass
+
+
 
 
 
@@ -167,6 +170,12 @@ class Smear(object):
         self.target = target
         self.res = res
         self.geo = geo
+        # initialize blank properties
+        props = ['mainGrp', 'camChild', 'meshOffset', 'meshScale', 'latticeFollow',
+                'latticeScale', 'ffd', 'lattice', 'latticeGrp', 'sX', 'sY', 'depthGuide',
+                'mesh', 'mesh_mtl', 'mesh_sg', 'meshScale']
+        for prop in props:
+            setattr(self, prop, None)
     
     def create(self):
         self._validateObjs()
@@ -177,6 +186,25 @@ class Smear(object):
         self._connectMeshToLattice()
         self._createConstraints()
         self._lockup()
+    
+    def addGeometry(self, geo):
+        """Add the given geometry to the smear mesh"""
+        if hasattr(self, 'ffd'):
+            lattice(self.ffd, e=True, g=geo)
+        else:
+            LOG.warning('lattice ffd has not been defined for {0}'.format(self))
+    
+    def removeGeometry(self, geo):
+        """Remove the given geometry from the smear mesh"""
+        if hasattr(self, 'ffd'):
+            curGeo = lattice(self.ffd, q=True, g=True)
+            remGeo = []
+            for g in geo:
+                if g in curGeo:
+                    remGeo.append(g)
+            lattice(self.ffd, e=True, rm=True, g=remGeo)
+        else:
+            LOG.warning('lattice ffd has not been defined for {0}'.format(self))
     
     def _validateObjs(self):
         pass
