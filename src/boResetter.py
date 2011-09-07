@@ -1,13 +1,9 @@
-'''
+"""
     Resetter
-    2.1.2
-    Python Version
     
     Copyright (c) 2010 Bohdon Sayre
     All Rights Reserved.
     bo@bohdon.com
-    
-    unique prefix: brst
     
     Description:
         This script allows you to setup controls for easy resetting,
@@ -30,78 +26,77 @@
         > Adds a default string to selected objects for restoring attributes
     
     Feel free to email me with any bugs, comments, or requests!
-'''
-import maya.cmds as cmds
+"""
+
+from pymel.core import *
 
 __version__ = '2.1.2'
 
-#==============================================================================
-def GUI():
-    #window name
-    win = 'brstWin';
+
+# GUI
+# ---
+
+class GUI(object):
+    def __init__(self):
+        self.winName = 'boResetterWin'
+        #define colors
+        self.colSet = [0.3, 0.36, 0.49]
+        self.colRemove = [0.49, 0.3, 0.3]
+        self.colReset = [0.2, 0.2, 0.2]
+        self.colReset2 = [0.25, 0.25, 0.25]
+        self.build()
     
-    #define colors
-    colSet = [0.3, 0.36, 0.49]
-    colRemove = [0.49, 0.3, 0.3]
-    colReset = [0.2, 0.2, 0.2]
-    colReset2 = [0.25, 0.25, 0.25]
-    
-    #check for pre-existing window
-    if cmds.window(win, ex=True):
-        cmds.deleteUI(win, wnd=True)
-    
-    #create window
-    cmds.window(win, rtf=1, mb=1, tlb=True, t='Resetter %s' % __version__)
-    
-    cmds.menu(l='Features')
-    cmds.menuItem(l='Add reset buttons to shelf (coming)', en=False)
-    cmds.menu(l='Info')
-    cmds.menuItem(l='List All Objects and Defaults', c='boResetter.listDefaults(1)')
-    cmds.menuItem(l='List Selected Object\'s Defaults', c='boResetter.listDefaults(0)')
-    cmds.menuItem(l='List All Objects with Defaults', c='boResetter.listObjectsWithDefaults()')
-    cmds.menuItem(l='Select All Objects with Defaults', c='boResetter.selectObjectsWithDefaults()')
-    
-    form = cmds.formLayout(nd=100)
-    
-    setFrame = cmds.frameLayout(l='Set/Remove Defaults', bs='out', mw=2, mh=2, cll=True, cl=True)
-    cmds.columnLayout(rs=2, adj=True)
-    b1 = cmds.button(l='Set Defaults', c='boResetter.setDefaults()', bgc=colSet)
-    b2 = cmds.button(l='Set Defaults Use Selected Attrs', c='boResetter.setDefaultsCB()', bgc=colSet)
-    b3 = cmds.button(l='Set Defaults Include Non-Keyable', c='boResetter.setDefaultsNonkeyable()', bgc=colSet)
-    b4 = cmds.button(l='Remove Defaults', c='boResetter.removeDefaults(0)', bgc=colRemove)
-    b5 = cmds.button(l='Remove from All Objects', c='boResetter.removeDefaults(1)', bgc=colRemove)
-    
-    cmds.setParent(form)
-    
-    resetFrame = cmds.frameLayout(l='Reset', bs='out', mw=2, mh=2)
-    resetForm = cmds.formLayout(nd=100)
-    b6 = cmds.button(l='Smart', c='boResetter.resetSmart(0)', bgc=colReset)
-    b7 = cmds.button(l='Defaults', c='boResetter.resetDefault(0)', bgc=colReset)
-    b8 = cmds.button(l='All', c='boResetter.resetDefault(1)', bgc=colReset2)
-    cmds.formLayout(resetForm, e=True, ap=[(b6, 'left', 0, 0), (b6, 'right', 2, 33),
-                                           (b7, 'left', 2, 33), (b7, 'right', 2, 66),
-                                           (b8, 'left', 2, 66), (b8, 'right', 2, 100),
-                                          ])
-    
-    
-    mw=4
-    cmds.formLayout(form, e=True, af=[(setFrame, 'left', mw), (setFrame, 'right', mw),
-                                      (resetFrame, 'left', mw), (resetFrame, 'right', mw),
-                                     ],
-                                  ac=[(resetFrame, 'top', 2, setFrame),
-                                     ], )
-                                      
-    
-    cmds.window(win, e=True, h=100, w=205)
-    if cmds.windowPref('brstWin', ex=True):
-        cmds.windowPref('brstWin', e=True, h=100, w=205)
-    cmds.showWindow(win)
-#==============================================================================
+    def build(self):
+        #check for pre-existing window
+        if window(self.winName, ex=True):
+            deleteUI(self.winName, wnd=True)
+        
+        if not windowPref(self.winName, ex=True):
+            windowPref(self.winName, tlc=(200, 200))
+        windowPref(self.winName, e=True, w=205, h=100)
+        
+        with window(self.winName, rtf=1, mb=1, tlb=True, t='Resetter %s' % __version__) as self.win:
+            with menu(l='Features'):
+                menuItem(l='Add reset buttons to shelf (coming)', en=False)
+                with menu(l='Info'):
+                    menuItem(l='List All Objects and Defaults', c='boResetter.listDefaults(1)')
+                    menuItem(l='List Selected Object\'s Defaults', c='boResetter.listDefaults(0)')
+                    menuItem(l='List All Objects with Defaults', c='boResetter.listObjectsWithDefaults()')
+                    menuItem(l='Select All Objects with Defaults', c='boResetter.selectObjectsWithDefaults()')
+            
+            with formLayout(nd=100) as form:
+                
+                with frameLayout(l='Set/Remove Defaults', bs='out', mw=2, mh=2, cll=True, cl=True) as setFrame:
+                    with columnLayout(rs=2, adj=True):
+                        button(l='Set Defaults', c='boResetter.setDefaults()', bgc=self.colSet)
+                        button(l='Set Defaults Use Selected Attrs', c='boResetter.setDefaultsCB()', bgc=self.colSet)
+                        button(l='Set Defaults Include Non-Keyable', c='boResetter.setDefaultsNonkeyable()', bgc=self.colSet)
+                        button(l='Remove Defaults', c='boResetter.removeDefaults(0)', bgc=self.colRemove)
+                        button(l='Remove from All Objects', c='boResetter.removeDefaults(1)', bgc=self.colRemove)
+                
+                with frameLayout(l='Reset', bs='out', mw=2, mh=2) as resetFrame:
+                    with formLayout(nd=100) as resetForm:
+                        b6 = button(l='Smart', c='boResetter.resetSmart(0)', bgc=self.colReset)
+                        b7 = button(l='Defaults', c='boResetter.resetDefault(0)', bgc=self.colReset)
+                        b8 = button(l='All', c='boResetter.resetDefault(1)', bgc=self.colReset2)
+                        formLayout(resetForm, e=True,
+                            ap=[(b6, 'left', 0, 0), (b6, 'right', 2, 33),
+                                (b7, 'left', 2, 33), (b7, 'right', 2, 66),
+                                 (b8, 'left', 2, 66), (b8, 'right', 2, 100), ])
+                
+                mw = 4
+                formLayout(form, e=True,
+                    af=[(setFrame, 'left', mw), (setFrame, 'right', mw),
+                        (resetFrame, 'left', mw), (resetFrame, 'right', mw)],
+                    ac=[(resetFrame, 'top', 2, setFrame)],  )
 
 
 
-#==============================================================================
-#SET DEFAULTS DEFINITIONS
+
+
+# Set Defaults
+# ------------
+
 def setDefaults():
     setDefaultsMain(1, 0, 0)
 def setDefaultsNonkeyable():
@@ -110,7 +105,7 @@ def setDefaultsCB():
     setDefaultsMain(0, 0, 1)
 
 def setDefaultsMain(key=1, nonkey=0, cb=0):
-    '''Main definition for setting defaults on the selected objects/cb attrs'''
+    """Main definition for setting defaults on the selected objects/cb attrs"""
     
     import maya.mel as mel
     
@@ -142,8 +137,8 @@ def setDefaultsMain(key=1, nonkey=0, cb=0):
     print('// set defaults for %d object(s), %d attribute(s)' % (len(selList), len(attrList)))
 
 def writeDefaultsAttr(obj, attrList):
-    '''Writes the current values of attrList on obj.
-    Creates the brstDefaults attribute if it does not already exist'''
+    """Writes the current values of attrList on obj.
+    Creates the brstDefaults attribute if it does not already exist"""
     
     objDefaults = {};
     if attrList is None:
@@ -172,12 +167,14 @@ def writeDefaultsAttr(obj, attrList):
     cmds.setAttr(('%s.brstDefaults' % obj), objDefaultsStr, type='string')
     
     print ('// default attribute settings for %s:\n%s\n' % (obj, objDefaultsStr))
-#==============================================================================
 
 
 
-#==============================================================================
-#RESETTING DEFINITIONS
+
+
+# Resetting
+# ---------
+
 def resetSmart(all=0):
     resetMain('smart', (all and 'all' or 'selected'))
 def resetDefault(all=0):
@@ -189,7 +186,7 @@ def removeDefaults(all=0):
 def listDefaults(all=0):
     resetMain('list', (all and 'all' or 'selected'))
 def resetMain(modeStr, objSetStr):
-    '''
+    """
         modeStr:
             list = print defaults
             reset = reset to defaults
@@ -199,7 +196,7 @@ def resetMain(modeStr, objSetStr):
         objSetStr:
             selected = 0 = act on selected objects
             all = 1 = act on all objects
-    '''
+    """
     
     list = modeStr == 'list'
     reset = modeStr == 'reset'
@@ -255,10 +252,10 @@ def resetMain(modeStr, objSetStr):
         print ('// removed defaults from %d object(s)\n' % objectCount)
 
 def resetObjAttrs(obj, useDefaults=True, customAttrs=None):
-    '''
+    """
     Sets an object to default values, whether they're
     brstDefaults or the common attribute defaults.
-    '''
+    """
     
     #this holds the final list of attributes to loop through
     attrList = []
@@ -295,30 +292,40 @@ def resetObjAttrs(obj, useDefaults=True, customAttrs=None):
                 cmds.setAttr('%s.%s' % (obj, attr),  1)
 
 def getAttrLongName(attr):
-    '''
-    Returns the long name of a given attribute
-    '''
-
-    convertList = {'tx':'translateX', 'ty':'translateY', 'tz':'translateZ', 'rx':'rotateX', 'ry':'rotateY', 'rz':'rotateZ', 'sx':'scaleX', 'sy':'scaleY', 'sz':'scaleZ', 'v':'visibility'}
+    """Return the long name of a given attribute"""
+    convertList = {
+        'tx':'translateX',
+        'ty':'translateY',
+        'tz':'translateZ',
+        'rx':'rotateX',
+        'ry':'rotateY',
+        'rz':'rotateZ',
+        'sx':'scaleX',
+        'sy':'scaleY',
+        'sz':'scaleZ',
+        'v':'visibility'
+    }
     if attr in convertList.keys():
         return convertList[attr]
     else:
         return attr
-#==============================================================================
 
 
-#==============================================================================
-#LIST/SELECT OBJS WITH DEFAULTS
+
+
+# Listing / Selecting Objects with Defaults
+# -----------------------------------------
+
 def listObjectsWithDefaults():
     objectsWithDefaultsMain('list')
 def selectObjectsWithDefaults():
     objectsWithDefaultsMain('select')
 
 def objectsWithDefaultsMain(modeStr):
-    '''
+    """
     Finds objects with brstDefaults and either
     lists them or selects them based on modeStr
-    '''
+    """
     
     allObjs = cmds.ls(r=1, l=1)
     
@@ -342,17 +349,18 @@ def objectsWithDefaultsMain(modeStr):
         print ('// no objects found with defaults set\n')
     elif modeStr == 'list':
         print ('// total of %d objects...\n' % objectCount)
-#==============================================================================
 
 
 
-#==============================================================================
-#some get definitions
+
+# Utils
+# -----
+
 def getDefaults(obj):
-    '''
+    """
     Returns the the brstDefaults of an object, if they exist.
     Return value is in the form {'attrName': [attrValues], }
-    '''
+    """
     if not cmds.objExists('%s.brstDefaults' % obj):
         return None
     
@@ -360,10 +368,10 @@ def getDefaults(obj):
     return defaults
 
 def getChannelBoxSelection(main=1, shape=1, out=1, hist=1):
-    '''
+    """
     Returns a dictionary {'obj1': [attr1, attr2], 'obj2': [attr1, attr2]}
     representing the current selection in the channel box.
-    '''
+    """
     
     #get every list of channel box selections
     allLists = []
