@@ -1,0 +1,9 @@
+[submodule "boGizmo"]
+	path = boGizmo
+	url = git@github.com:bohdon/boGizmo.git
+[submodule "boTools"]
+	path = boTools
+	url = git@github.com:bohdon/boTools.git
+[submodule "boViewGui"]
+	path = boViewGui
+	url = git@github.com:bohdon/boViewGui.git
