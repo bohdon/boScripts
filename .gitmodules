@@ -7,3 +7,12 @@
 [submodule "boViewGui"]
 	path = boViewGui
 	url = git@github.com:bohdon/boViewGui.git
+[submodule "boRigs"]
+	path = boRigs
+	url = git@github.com:bohdon/boRigs.git
+[submodule "boLighting"]
+	path = boLighting
+	url = git@github.com:bohdon/boLighting.git
+[submodule "boAnimation"]
+	path = boAnimation
+	url = git@github.com:bohdon/boAnimation.git
