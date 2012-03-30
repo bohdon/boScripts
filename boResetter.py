@@ -56,13 +56,15 @@ class GUI(object):
         windowPref(self.winName, e=True, w=205, h=100)
         
         with window(self.winName, rtf=1, mb=1, tlb=True, t='Resetter %s' % __version__) as self.win:
-            with menu(l='Features'):
-                menuItem(l='Add reset buttons to shelf (coming)', en=False)
-                with menu(l='Info'):
-                    menuItem(l='List All Objects and Defaults', c='boResetter.listDefaults(1)')
-                    menuItem(l='List Selected Object\'s Defaults', c='boResetter.listDefaults(0)')
-                    menuItem(l='List All Objects with Defaults', c='boResetter.listObjectsWithDefaults()')
-                    menuItem(l='Select All Objects with Defaults', c='boResetter.selectObjectsWithDefaults()')
+            m = menu(l='Features')
+            setParent(m, m=True)
+            menuItem(l='Add reset buttons to shelf (coming)', en=False)
+            m2 = menu(l='Info')
+            setParent(m2, m=True)
+            menuItem(l='List All Objects and Defaults', c='boResetter.listDefaults(1)')
+            menuItem(l='List Selected Object\'s Defaults', c='boResetter.listDefaults(0)')
+            menuItem(l='List All Objects with Defaults', c='boResetter.listObjectsWithDefaults()')
+            menuItem(l='Select All Objects with Defaults', c='boResetter.selectObjectsWithDefaults()')
             
             with formLayout(nd=100) as form:
                 
