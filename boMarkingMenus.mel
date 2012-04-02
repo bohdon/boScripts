@@ -528,6 +528,9 @@ global proc bmmMenu_Resetter(string $parentName) {
 		menuItem -l "List Defaults" -ecr 1
 			-ann "Lists the default values for the selected objects, if any exist"
 			-c "python(\"boResetter.listDefaults()\")";
+		menuItem -l "Select Objects" -ecr 1
+			-ann "Select all objects in the scene that have attribute defaults"
+			-c "python(\"boResetter.selectObjectsWithDefaults()\")";
 		
 	} else {
 		menuItem -rp "N" -l "All" -ecr 1
