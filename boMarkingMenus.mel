@@ -497,21 +497,21 @@ global proc bmmMenu_Resetter(string $parentName) {
 	if(!catch(`python("boResetter")`)) {
 		menuItem -rp "N" -l "Smart" -ecr 1
 			-ann "Reset the selected objects' transformations to the defaults, or identity if defaults aren't available"
-			-c "python(\"boResetter.resetSmart(0)\")";
+			-c "python(\"boResetter.resetSmart()\")";
 		menuItem -rp "NW" -l "Xform" -ecr 1
 			-ann "Reset the selected objects' transformations to identity, even if defaults are available"
-			-c "python(\"boResetter.resetXform(0)\")";
+			-c "python(\"boResetter.resetStandards()\")";
 		menuItem -rp "NE" -l "Defaults" -ecr 1
 			-ann "Reset the selected objects' transformations to the defaults, ignore the object if none are available"
-			-c "python(\"boResetter.resetDefault(0)\")";
+			-c "python(\"boResetter.reset()\")";
 		menuItem -rp "SE" -l "All Defaults" -ecr 0
 			-ann "Reset any object that has defaults to it's defaults"
-			-c "python(\"boResetter.resetDefault(1))\")";
+			-c "python(\"boResetter.resetAll()\")";
 		
 		//list menus
 		menuItem -l "Resetter" -ecr 0
 			-ann "Open the boResetter GUI"
-			-c "boResetter";
+			-c "python(\"boResetter.GUI()\")";
 		menuItem -d 1;
 		menuItem -l "Set Defaults" -ecr 0
 			-ann "Set the current transformations as the defaults for the selected objects"
@@ -524,10 +524,10 @@ global proc bmmMenu_Resetter(string $parentName) {
 			-c "python(\"boResetter.setDefaultsCB()\")";
 		menuItem -l "Remove Defaults" -ecr 0
 			-ann "Removes the defulats for the selected objects"
-			-c "python(\"boResetter.removeDefaults(0)\")";
+			-c "python(\"boResetter.removeDefaults()\")";
 		menuItem -l "List Defaults" -ecr 1
 			-ann "Lists the default values for the selected objects, if any exist"
-			-c "python(\"boResetter.listDefaults(0)\")";
+			-c "python(\"boResetter.listDefaults()\")";
 		
 	} else {
 		menuItem -rp "N" -l "All" -ecr 1

@@ -3,7 +3,7 @@
     
     Copyright (c) 2010 Bohdon Sayre
     All Rights Reserved.
-    bo@bohdon.com
+    bohdon@gmail.com
     
     Description:
         This script allows you to setup controls for easy resetting,
@@ -11,14 +11,22 @@
         you to reset those attributes with a button or command
     
     Instructions:
-        To run the script, use
+        To run the script's gui, use:
             import boResetter
             boResetter.GUI()
+        To use the script in other tools:
+            >>> import boResetter
+            >>> boResetter.setDefaults() # store selected node's keyable attributes as defaults
+            >>> boResetter.listDefaults()
+            >>> boResetter.reset() # reset selected node's attributes
     
+    Version 2.2.0:
+        > Much better usage within other toolsets
+        > Reorganizing and simplifying overall implementation
     Version 2.1.2:
         > Rewrote main resetting method to use python evals, instead of using mel
         > Rewritten in python
-        > Added channel box functionality - Set or reset the selected cb attributes using resetSmart or setDefaultsCB
+        > Added channel box functionality - Set or reset the selected cb attributes using resetSmart or setDefaultsCBSelection
         > Referencing and renaming now functional because the object name is not stored
         > Smart and Xform modes added
         > Popup menus to add each function to the current shelf
@@ -28,13 +36,12 @@
     Feel free to email me with any bugs, comments, or requests!
 """
 
-from pymel.core import *
+import pymel.core as pm
 
-__version__ = '2.1.2'
+__version__ = '2.2.0'
 
+DEFAULTS_ATTR = 'brstDefaults'
 
-# GUI
-# ---
 
 class GUI(object):
     def __init__(self):
@@ -48,46 +55,44 @@ class GUI(object):
     
     def build(self):
         #check for pre-existing window
-        if window(self.winName, ex=True):
-            deleteUI(self.winName, wnd=True)
+        if pm.window(self.winName, ex=True):
+            pm.deleteUI(self.winName, wnd=True)
         
-        if not windowPref(self.winName, ex=True):
-            windowPref(self.winName, tlc=(200, 200))
-        windowPref(self.winName, e=True, w=205, h=100)
+        if not pm.windowPref(self.winName, ex=True):
+            pm.windowPref(self.winName, tlc=(200, 200))
+        pm.windowPref(self.winName, e=True, w=280, h=100)
         
-        with window(self.winName, rtf=1, mb=1, tlb=True, t='Resetter %s' % __version__) as self.win:
-            m = menu(l='Features')
-            setParent(m, m=True)
-            menuItem(l='Add reset buttons to shelf (coming)', en=False)
-            m2 = menu(l='Info')
-            setParent(m2, m=True)
-            menuItem(l='List All Objects and Defaults', c='boResetter.listDefaults(1)')
-            menuItem(l='List Selected Object\'s Defaults', c='boResetter.listDefaults(0)')
-            menuItem(l='List All Objects with Defaults', c='boResetter.listObjectsWithDefaults()')
-            menuItem(l='Select All Objects with Defaults', c='boResetter.selectObjectsWithDefaults()')
+        with pm.window(self.winName, rtf=1, mb=1, tlb=True, t='Resetter %s' % __version__) as self.win:
+            imenu = pm.menu(l='Info')
+            pm.setParent(imenu, m=True)
+            pm.menuItem(l='List Objects with Defaults', c=pm.Callback(listObjectsWithDefaults))
+            pm.menuItem(l='Select Objects with Defaults', c=pm.Callback(selectObjectsWithDefaults))
+            pm.menuItem(l='List Defaults', c=pm.Callback(listDefaults))
             
-            with formLayout(nd=100) as form:
+            with pm.formLayout(nd=100) as form:
                 
-                with frameLayout(l='Set/Remove Defaults', bs='out', mw=2, mh=2, cll=True, cl=True) as setFrame:
-                    with columnLayout(rs=2, adj=True):
-                        button(l='Set Defaults', c='boResetter.setDefaults()', bgc=self.colSet)
-                        button(l='Set Defaults Use Selected Attrs', c='boResetter.setDefaultsCB()', bgc=self.colSet)
-                        button(l='Set Defaults Include Non-Keyable', c='boResetter.setDefaultsNonkeyable()', bgc=self.colSet)
-                        button(l='Remove Defaults', c='boResetter.removeDefaults(0)', bgc=self.colRemove)
-                        button(l='Remove from All Objects', c='boResetter.removeDefaults(1)', bgc=self.colRemove)
+                with pm.frameLayout(l='Set/Remove Defaults', bs='out', mw=2, mh=2, cll=True, cl=True) as setFrame:
+                    with pm.columnLayout(rs=2, adj=True):
+                        pm.button(l='Set Defaults', c=pm.Callback(setDefaults), bgc=self.colSet, ann='Set defaults on the selected objects using all keyable attributes')
+                        pm.button(l='Set Defaults Include Non-Keyable', c=pm.Callback(setDefaultsNonkeyable), bgc=self.colSet, ann='Set defaults on the selected objects using keyable and non-keyable attributes in the channel box')
+                        pm.button(l='Set Defaults with CB Selection', c=pm.Callback(setDefaultsCBSelection), bgc=self.colSet, ann='Set defaults on the selected objects using the selected channel box attributes')
+                        pm.button(l='Remove Defaults', c=pm.Callback(removeDefaults), bgc=self.colRemove, ann='Remove all defaults from the selected objects')
+                        pm.button(l='Remove from All Objects', c=pm.Callback(removeAllDefaults), bgc=self.colRemove, ann='Remove defaults from all objects in the scene')
                 
-                with frameLayout(l='Reset', bs='out', mw=2, mh=2) as resetFrame:
-                    with formLayout(nd=100) as resetForm:
-                        b6 = button(l='Smart', c='boResetter.resetSmart(0)', bgc=self.colReset)
-                        b7 = button(l='Defaults', c='boResetter.resetDefault(0)', bgc=self.colReset)
-                        b8 = button(l='All', c='boResetter.resetDefault(1)', bgc=self.colReset2)
-                        formLayout(resetForm, e=True,
-                            ap=[(b6, 'left', 0, 0), (b6, 'right', 2, 33),
-                                (b7, 'left', 2, 33), (b7, 'right', 2, 66),
-                                 (b8, 'left', 2, 66), (b8, 'right', 2, 100), ])
+                with pm.frameLayout(l='Reset', bs='out', mw=2, mh=2) as resetFrame:
+                    with pm.formLayout(nd=100) as resetForm:
+                        b6 = pm.button(l='Smart', c=pm.Callback(resetSmart), bgc=self.colReset, ann='Reset the selected objects. Uses transform standards if no defaults are defined for translate, rotate, and scale')
+                        b7 = pm.button(l='Defaults', c=pm.Callback(resetDefault), bgc=self.colReset, ann='Reset the selected objects using only stored defaults, if any')
+                        b8 = pm.button(l='Standards', c=pm.Callback(resetStandards), bgc=self.colReset, ann='Reset the selected objects using only transform standards for translate, rotate, scale (eg. 0, 0, 1)')
+                        b9 = pm.button(l='All', c=pm.Callback(resetAll), bgc=self.colReset2, ann='Reset all objects in the scene with defaults')
+                        pm.formLayout(resetForm, e=True,
+                            ap=[(b6, 'left', 0, 0), (b6, 'right', 2, 25),
+                                (b7, 'left', 2, 25), (b7, 'right', 2, 50),
+                                 (b8, 'left', 2, 50), (b8, 'right', 2, 75),
+                                  (b9, 'left', 2, 75), (b9, 'right', 2, 100), ])
                 
                 mw = 4
-                formLayout(form, e=True,
+                pm.formLayout(form, e=True,
                     af=[(setFrame, 'left', mw), (setFrame, 'right', mw),
                         (resetFrame, 'left', mw), (resetFrame, 'right', mw)],
                     ac=[(resetFrame, 'top', 2, setFrame)],  )
@@ -95,323 +100,308 @@ class GUI(object):
 
 
 
+# Set/Get Defaults
+# ----------------
 
-# Set Defaults
-# ------------
+def setDefaultsNonkeyable(nodes=None):
+    setDefaults(nodes, nonkey=True)
 
-def setDefaults():
-    setDefaultsMain(1, 0, 0)
-def setDefaultsNonkeyable():
-    setDefaultsMain(1, 1, 0)
-def setDefaultsCB():
-    setDefaultsMain(0, 0, 1)
+def setDefaultsCBSelection(nodes=None):
+    setDefaults(nodes, key=False, cbsel=True)
 
-def setDefaultsMain(key=1, nonkey=0, cb=0):
-    """Main definition for setting defaults on the selected objects/cb attrs"""
+def setDefaults(nodes=None, attrList=[], key=True, nonkey=False, cbsel=False, attrQuery={}):
+    """
+    Set the default settings for the given nodes. Uses attributes based
+    on the given settings. Default is to use all unlocked keyable attributes.
+    Uses the selection if no nodes are given.
     
-    import maya.mel as mel
-    
-    selList = cmds.ls(r=1, l=1, sl=1)
-    if not selList: return
-    if not key and not nonkey and not cb: return
-    
-    for obj in selList:
-        attrList = []
-        if key:
-            tempList = cmds.listAttr(obj, u=1, k=1)
-            if tempList is not None:
-                attrList.extend(tempList)
-        if nonkey:
-            tempList = cmds.listAttr(obj, u=1, cb=1)
-            if tempList is not None:
-                attrList.extend(tempList)
-        if cb:
-            cbSelDict = getChannelBoxSelection()
-            if obj in cbSelDict.keys():
-                attrList.extend(cbSelDict[obj])
-        
-        if len(attrList) == 0:
-            mel.eval("warning(\"no attributes of this type to set defaults for\");")
-            return
-        
-        writeDefaultsAttr(obj, attrList)
-    
-    print('// set defaults for %d object(s), %d attribute(s)' % (len(selList), len(attrList)))
-
-def writeDefaultsAttr(obj, attrList):
-    """Writes the current values of attrList on obj.
-    Creates the brstDefaults attribute if it does not already exist"""
-    
-    objDefaults = {};
-    if attrList is None:
+    `attrList` -- list of attributes to use. works in addition to other options
+    `key` -- include keyable attributes
+    `nonkey` -- include all channel box attributes, including nonkeyable
+    `cbsel` -- use only the selected channel box attributes
+    `attrQuery` -- a kwargs dict to be used with listAttr to find the
+        attributes for which to store defaults. works in addition to other options
+    """
+    if nodes is None:
+        nodes = pm.selected()
+    if not isinstance(nodes, (list, tuple)):
+        nodes = [nodes]
+    nodes = [n for n in nodes if isinstance(n, (str, pm.nt.DependNode))]
+    if len(nodes) == 0:
         return
     
-    for attr in attrList:
-        #prepare string
-        attrName = str(attr)
-        attrVal = cmds.getAttr('%s.%s' % (obj, attr))
-        attrType = cmds.getAttr('%s.%s' % (obj, attr), typ=True)
-        if attrType == 'string':
-            continue
-        if type(attrVal) == list:
-            #non-single attributes are returned as [(0.0, 0.0, 0.0)]
-            objDefaults[attrName] = attrVal[0]
+    selAttrs = getChannelBoxSelection()
+    # keyable and nonkeyable queries cannot be combined, so we build multiple queries.
+    # any given customListAttr options are used as a third possible query
+    queries = []
+    if key:
+        queries.append({'unlocked':True, 'k':True})
+    if nonkey:
+        queries.append({'unlocked':True, 'cb':True})
+    if len(attrQuery) > 0:
+        queries.append(attrQuery)
+    def getAttrs(node):
+        if cbsel:
+            return selAttrs[node] if node in selAttrs else []
         else:
-            objDefaults[attrName] = tuple([attrVal])
+            listed = [a for a in [attrs for query in queries for attrs in node.listAttr(**query)]]
+            custom = [node.attr(a) for a in attrList if node.hasAttr(a)]
+            return listed + custom
     
-    #convert the dictionary into a string
-    objDefaultsStr = str(objDefaults)
-    
-    #add the attribute if it doesn't exist
-    if not cmds.objExists('%s.brstDefaults' % obj):
-        cmds.addAttr(obj, ln='brstDefaults', dt='string')
-    #set the attribute
-    cmds.setAttr(('%s.brstDefaults' % obj), objDefaultsStr, type='string')
-    
-    print ('// default attribute settings for %s:\n%s\n' % (obj, objDefaultsStr))
+    for n in nodes:
+        attrs = getAttrs(n)
+        if len(attrs) > 0:
+            setDefaultsForAttrs(attrs)
+        else:
+            pm.warning('No matching attributes for {0} to set defaults. removing defaults'.format(n))
+            removeDefaults(n)
+    print('# set defaults for {0} object(s)'.format(len(nodes)))
+
+def setDefaultsForAttrs(attrs):
+    """
+    Store the current values of each attr as defaults.
+    Assumes the given attributes are all for the same object.
+    """
+    if attrs is None:
+        return
+    node = attrs[0].node()
+    defaults = {}
+    for attr in attrs:
+        if attr.attrName() == DEFAULTS_ATTR:
+            pm.warning('skipping {0} as it stores defaults and therefore cannot have a default'.format(attr))
+            continue
+        if attr.node() == node:
+            try:
+                defaults[attr.attrName()] = attr.get()
+            except:
+                # complex attributes just dont work
+                pm.warning('could not store defaults for attribute: {0}'.format(attr))
+    dattr = getDefaultsAttr(node, True)
+    if dattr.isLocked():
+        pm.warning('cannot store defaults, {0} is locked'.format(dattr))
+    else:
+        dattr.set(str(defaults))
+        print ('# stored {0} default(s) for {1}: {2}'.format(len(defaults.keys()), node, defaults.keys()))
 
 
+
+def getObjectsWithDefaults():
+    """ Return all objects with defaults """
+    return [obj for obj in pm.ls() if obj.hasAttr(DEFAULTS_ATTR)]
+
+def getDefaultsAttr(node, create=False):
+    """ Return the defaults attribute for the given nodeect """
+    if not isinstance(node, (str, pm.nt.DependNode)):
+        raise TypeError('expected node or node name, got {0}'.format(type(node).__name__))
+    node = pm.PyNode(node)
+    if create and not node.hasAttr(DEFAULTS_ATTR):
+        if node.isReadOnly() or node.isLocked():
+            pm.warning('Cannot add defaults to {0}. Node is locked or read-only'.format(node))
+            return
+        node.addAttr(DEFAULTS_ATTR, dt='string')
+        dattr = node.attr(DEFAULTS_ATTR)
+        dattr.set('{}')
+    if node.hasAttr(DEFAULTS_ATTR):
+        return node.attr(DEFAULTS_ATTR)
+
+def getDefaults(node):
+    """ Returns the defaults of a node, if they exist, as a dictionary. """
+    from pymel.core import dt
+    from pymel.core.datatypes import Matrix
+    
+    dattr = getDefaultsAttr(node)
+    if dattr is not None:
+        defaultsRaw = None
+        val = dattr.get()
+        try:
+            defaultsRaw = eval(val)
+        except:
+            pass
+        # validate defaults
+        if not isinstance(defaultsRaw, dict):
+            pm.warning('invalid defaults found on: {0}'.format(node))
+            return {}
+        # process defaults
+        defaults = {}
+        for k, v in defaultsRaw.items():
+            # skip the defaults attribute itself, if it somehow got in there
+            if k == DEFAULTS_ATTR:
+                pm.warning('skipping attribute {0}. it stores defaults and is therefore unable to have a default'.format(k))
+                continue
+            if not node.hasAttr(k):
+                pm.warning('skipping default, {0} has no attribute .{1}'.format(node, k))
+                continue
+            # backwards compatibility checking
+            if type(node.attr(k).get()) != type(v):
+                pm.warning('default values for {0} are deprecated. please re-set the defaults'.format(node.attr(k)))
+                # parse the value assuming its a tuple (old resetter)
+                if isinstance(v, tuple) and len(v) == 1:
+                    v = v[0]
+            defaults[node.attr(k)] = v
+        return defaults
+    return {}
+    
+
+
+
+def removeDefaults(nodes=None):
+    """
+    Remove defaults from the given nodes.
+    Returns the nodes for which defaults were removed.
+    """
+    if nodes is None:
+        nodes = pm.selected()
+    if not isinstance(nodes, (list, tuple)):
+        nodes = [nodes]
+
+    removed = []
+    for n in nodes:
+        if n.isReadOnly() or n.isLocked():
+            pm.warning('Could not remove defaults from {0}. Node is locked or read-only.'.format(n))
+            continue
+        dattr = getDefaultsAttr(n)
+        if dattr is not None:
+            removed.append(pm.PyNode(n))
+            dattr.delete()
+    return removed
+
+def removeAllDefaults():
+    """ Remove all defaults from all objects in the scene. """
+    return removeDefaults(getObjectsWithDefaults())
 
 
 
 # Resetting
 # ---------
 
-def resetSmart(all=0):
-    resetMain('smart', (all and 'all' or 'selected'))
-def resetDefault(all=0):
-    resetMain('reset', (all and 'all' or 'selected'))
-def resetXform(all=0):
-    resetMain('xform', (all and 'all' or 'selected'))
-def removeDefaults(all=0):
-    resetMain('remove', (all and 'all' or 'selected'))
-def listDefaults(all=0):
-    resetMain('list', (all and 'all' or 'selected'))
-def resetMain(modeStr, objSetStr):
+def resetDefault(nodes=None):
+    pm.warning('boResetter.resetDefault() is deprecated. please use reset() instead.')
+    reset(nodes)
+
+def resetSmart(nodes=None):
+    reset(nodes, useDefaults=True, useStandards=True)
+
+def resetXform(*args, **kwargs):
+    pm.warning('boResetter.resetXForm() is deprecated. please use resetStandards() instead.')
+    resetStandards()
+
+def resetStandards(nodes=None):
+    reset(nodes, useDefaults=False, useStandards=True)
+
+def resetAll():
+    reset(getObjectsWithDefaults())
+
+def reset(nodes=None, useDefaults=True, useStandards=False, useCBSelection=True):
     """
-        modeStr:
-            list = print defaults
-            reset = reset to defaults
-            remove = remove defaults
-            smart = reset, or do reset transforms (only works on selected)
-            xform = reset transforms no matter what (only works on selected)
-        objSetStr:
-            selected = 0 = act on selected objects
-            all = 1 = act on all objects
+    Reset the given node's attributes to their default values.
+    Uses the selection if no nodes are given.
+    
+    `useDefaults` -- use the defaults to reset attributes
+    `useStandards` -- reset transform, rotate, scale to 0, 0, and 1
+        if no defaults are found for those attributes.
+    `useCBSelection` -- if there is a channel box selection, use it
+        to limit which attributes will be reset
     """
-    
-    list = modeStr == 'list'
-    reset = modeStr == 'reset'
-    remove = modeStr == 'remove'
-    smart = modeStr == 'smart'
-    xform = modeStr == 'xform'
-    
-    all = objSetStr == 'all'
-    selected = objSetStr == 'selected'
-    
-    #reset smart and xform requires selected objects only
-    if smart or xform:
-        all = False
-        selected = True
-    
-    objList = cmds.ls(r=1, l=1, sl=selected)
-    
-    
-    objectCount = 0
-    cbSelList = getChannelBoxSelection()
-    if len(cbSelList) > 0 and smart:
-        #channel box resetting only happens in smart mode
-        #get the objects from the channel box selection, check for their defaults, and reset only those attributes
-        #we need to get an array for each object, so we can use each object and it's attributes individually...
-        for obj in cbSelList.keys():
-            attrList = cbSelList[obj]
-            resetObjAttrs(obj, False, attrList)
+    if nodes is None:
+        nodes = pm.selected()
     else:
-        #cycle through the selected objects and look for defaults, unless the mode is xform
-        for obj in objList:
-            if cmds.objExists('%s.brstDefaults' % obj) and not xform:
-                if list:
-                    cmds.ScriptEditor()
-                    print ('// default attribute settings for %s:\n%s\n' % (obj, cmds.getAttr('%s.brstDefaults' % obj)) )
-                elif reset or smart:
-                    resetObjAttrs(obj, True)
-                elif remove:
-                    cmds.deleteAttr('%s.brstDefaults' % obj)
-                    
-                objectCount += 1
-            
-            elif smart or xform:
-                #reset transforms
-                for attr in ['tx','ty','tz','rx','ry','rz','sx','sy','sz']:
-                    if cmds.getAttr('%s.%s' % (obj, attr), se=1):
-                        cmds.setAttr('%s.%s' % (obj, attr),  int('s' in attr))
+        if not isinstance(nodes, (list, tuple)):
+            if not isinstance(nodes, (str, unicode, pm.nt.DependNode)):
+                raise TypeError('expected node, node name, or list of nodes; got {0}'.format(type(nodes).__name__))
+            nodes = [nodes]
+        nodes = [pm.PyNode(n) for n in nodes]
     
-    
-    if list:
-        cmds.ScriptEditor()
-        print ('// listed defaults for %d object(s)\n' % objectCount)
-    if remove:
-        print ('// removed defaults from %d object(s)\n' % objectCount)
-
-def resetObjAttrs(obj, useDefaults=True, customAttrs=None):
-    """
-    Sets an object to default values, whether they're
-    brstDefaults or the common attribute defaults.
-    """
-    
-    #this holds the final list of attributes to loop through
-    attrList = []
-    
-    #get the defaults, if they exist
-    defaults = getDefaults(obj)
-    
-    if customAttrs is not None:
-        attrList = customAttrs[:]
-    if defaults is not None and useDefaults is True:
-        attrList.extend(defaults.keys())
-    
-    #return if there are no attributes
-    if attrList == []:
-        return
-    
-    #print 'attrList: %s' % attrList
-    
-    for attr in attrList:
-        if (defaults is not None) and (attr in defaults.keys()):
-            #get the value for the attribute
-            attrVal = defaults[attr]
-            #print 'setting %s.%s to %s' % (obj, attr, attrVal)
-            if len(attrVal) == 1:
-                cmds.setAttr('%s.%s' % (obj, attr), attrVal[0], )
-            elif len(attrVal) == 3:
-                cmds.setAttr('%s.%s' % (obj, attr), attrVal[0], attrVal[1], attrVal[2], )
-        else:
-            #the attribute wasn't found in defaults,
-            #so it has to be trans rot or scale, else skip
-            if 'translate' in attr or 'rotate' in attr:
-                cmds.setAttr('%s.%s' % (obj, attr),  0)
-            elif 'scale' in attr or 'visibility' in attr:
-                cmds.setAttr('%s.%s' % (obj, attr),  1)
-
-def getAttrLongName(attr):
-    """Return the long name of a given attribute"""
-    convertList = {
-        'tx':'translateX',
-        'ty':'translateY',
-        'tz':'translateZ',
-        'rx':'rotateX',
-        'ry':'rotateY',
-        'rz':'rotateZ',
-        'sx':'scaleX',
-        'sy':'scaleY',
-        'sz':'scaleZ',
-        'v':'visibility'
-    }
-    if attr in convertList.keys():
-        return convertList[attr]
-    else:
-        return attr
-
-
-
-
-# Listing / Selecting Objects with Defaults
-# -----------------------------------------
-
-def listObjectsWithDefaults():
-    objectsWithDefaultsMain('list')
-def selectObjectsWithDefaults():
-    objectsWithDefaultsMain('select')
-
-def objectsWithDefaultsMain(modeStr):
-    """
-    Finds objects with brstDefaults and either
-    lists them or selects them based on modeStr
-    """
-    
-    allObjs = cmds.ls(r=1, l=1)
-    
-    if modeStr == 'select':
-        cmds.select(cl=1)
-    
-    if modeStr == 'list':
-        cmds.ScriptEditor()
-        print '\n'
-    
-    objectCount = 0
-    for obj in allObjs:
-        if cmds.objExists('%s.brstDefaults' % obj):
-            if modeStr == 'select':
-                cmds.select(obj, add=1)
-            elif modeStr == 'list':
-                print ('// %s' % obj)
-            objectCount += 1
-    
-    if not objectCount:
-        print ('// no objects found with defaults set\n')
-    elif modeStr == 'list':
-        print ('// total of %d objects...\n' % objectCount)
-
-
+    selAttrs = getChannelBoxSelection()
+    for n in nodes:
+        settings = {}
+        # add standard transform reset values
+        if useStandards and not useDefaults:
+            for a in [i+j for i in 'trs' for j in 'xyz']:
+                # standards are only added if they are settable
+                if n.hasAttr(a) and n.attr(a).isSettable():
+                    settings[n.attr(a)] = 1 if 's' in a else 0
+        # add stored defaults
+        if useDefaults:
+            defaults = getDefaults(n)
+            settings.update(defaults)
+        # trim using cb selection
+        if useCBSelection and len(selAttrs) > 0:
+            nodeSelAttrs = {} if not selAttrs.has_key(n) else selAttrs[n]
+            delAttrs = [a for a in settings.keys() if a not in nodeSelAttrs]
+            for a in delAttrs:
+                del settings[a]
+                
+        for attr, value in settings.items():
+            if attr.isSettable():
+                try:
+                    attr.set(value)
+                except Exception as e:    
+                    print ('# skipping {0}. could not set attribute:'.format(attr))
+                    print (e)
+            else:
+                print ('# skipping {0}. attribute not settable'.format(attr))
 
 
 # Utils
 # -----
 
-def getDefaults(obj):
-    """
-    Returns the the brstDefaults of an object, if they exist.
-    Return value is in the form {'attrName': [attrValues], }
-    """
-    if not cmds.objExists('%s.brstDefaults' % obj):
-        return None
-    
-    defaults = eval( cmds.getAttr('%s.brstDefaults' % obj) )
-    return defaults
+def listObjectsWithDefaults():
+    nodes = getObjectsWithDefaults()
+    print('\n# Objects with defaults ({0})'.format(len(nodes)))
+    for n in nodes:
+        print('#   {0}'.format(n))
 
-def getChannelBoxSelection(main=1, shape=1, out=1, hist=1):
+def listDefaults(nodes=None):
+    if nodes is None:
+        sel = pm.selected()
+        if len(sel) > 0:
+            nodes = sel
+        else:
+            nodes = getObjectsWithDefaults()
+    nodesWithDefaults = [n for n in nodes if n.hasAttr(DEFAULTS_ATTR)]
+    print('\n# Object defaults ({0})'.format(len(nodesWithDefaults)))
+    for n in nodesWithDefaults:
+        defaults = getDefaults(n)
+        print('#   {0}: {1}'.format(n, defaults))
+
+def selectObjectsWithDefaults():
+    pm.select(getObjectsWithDefaults())
+
+
+def getChannelBoxSelection(main=True, shape=True, out=True, hist=True):
     """
-    Returns a dictionary {'obj1': [attr1, attr2], 'obj2': [attr1, attr2]}
-    representing the current selection in the channel box.
+    Returns a dictionary representing the current selection in the channel box.
+    
+    eg. {myNode: ['attr1', 'attr2'], myOtherNode: ['attr1', 'attr2', 'attr3']}
+    
+    Includes attributes from these sections:
+    `main` -- the main attributes section
+    `shape` -- the shape nodes section
+    `out` -- the outputs section of the node
+    `hist` -- the inputs (history) section of the node
     """
     
-    #get every list of channel box selections
-    allLists = []
-    if main:
-        tempList = [cmds.channelBox('mainChannelBox', q=1, mol=1), cmds.channelBox('mainChannelBox', q=1, sma=1)]
-        if tempList is not None:
-            allLists.append(tempList)
-    if shape:
-        tempList = [cmds.channelBox('mainChannelBox', q=1, sol=1), cmds.channelBox('mainChannelBox', q=1, ssa=1)]
-        if tempList is not None:
-            allLists.append(tempList)
-    if out:
-        tempList = [cmds.channelBox('mainChannelBox', q=1, ool=1), cmds.channelBox('mainChannelBox', q=1, soa=1)]
-        if tempList is not None:
-            allLists.append(tempList)
-    if hist:
-        tempList = [cmds.channelBox('mainChannelBox', q=1, hol=1), cmds.channelBox('mainChannelBox', q=1, sha=1)]
-        if tempList is not None:
-            allLists.append(tempList)
+    def cbinfo(flag):
+        return pm.channelBox('mainChannelBox', q=True, **{flag:True})
     
-    if len(allLists) == 0:
-        return None
+    # for all flags {0} = m, s, o, or h (main, selected, out, history)
+    # see channelBox documentation for flag specifications
+    opts = {'m':main, 's':shape, 'o':out, 'h':hist}
+    modes = [i[0] for i in opts.items() if i[1]]
+    objFlag = '{0}ol' # o=object l=list
+    attrFlag = 's{0}a' # s=selected, a=attrs
     
-    #create the dict we'll return
-    cbSelDict = {}
-    for (objs, attrs) in allLists:
-        if objs is None or attrs is None:
-            continue
-        for obj in objs:
-            #add the object if it hasn't been already
-            objStr = str(cmds.ls(obj, l=1)[0])
-            if objStr not in cbSelDict.keys():
-                cbSelDict[objStr] = []
-            #add any attributes that exist for that object
-            for attr in attrs:
-                if cmds.objExists('%s.%s' % (objStr, attr)) and (attr not in cbSelDict[objStr]):
-                    longAttr = cmds.attributeName('%s.%s' % (objStr, attr), l=1)
-                    cbSelDict[objStr].append(str(longAttr))
+    result = {}
+    for mode in modes:
+        objs = cbinfo(objFlag.format(mode))
+        attrs = cbinfo(attrFlag.format(mode))
+        if objs is not None and attrs is not None:
+            for obj in objs:
+                pyobj = pm.PyNode(obj)
+                if not result.has_key(pyobj):
+                    result[pyobj] = []
+                thisObjsAttrs = [pyobj.attr(a) for a in attrs if pyobj.hasAttr(a)]
+                result[pyobj].extend(thisObjsAttrs)
     
-    return cbSelDict
-#==============================================================================
+    return result
+
