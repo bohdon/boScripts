@@ -500,7 +500,7 @@ global proc bmmMenu_Resetter(string $parentName) {
 			-c "python(\"boResetter.resetSmart()\")";
 		menuItem -rp "NW" -l "Xform" -ecr 1
 			-ann "Reset the selected objects' transformations to identity, even if defaults are available"
-			-c "python(\"boResetter.resetStandards()\")";
+			-c "python(\"boResetter.resetTransform()\")";
 		menuItem -rp "NE" -l "Defaults" -ecr 1
 			-ann "Reset the selected objects' transformations to the defaults, ignore the object if none are available"
 			-c "python(\"boResetter.reset()\")";

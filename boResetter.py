@@ -83,7 +83,7 @@ class GUI(object):
                     with pm.formLayout(nd=100) as resetForm:
                         b6 = pm.button(l='Smart', c=pm.Callback(resetSmart), bgc=self.colReset, ann='Reset the selected objects. Uses transform standards if no defaults are defined for translate, rotate, and scale')
                         b7 = pm.button(l='Defaults', c=pm.Callback(resetDefault), bgc=self.colReset, ann='Reset the selected objects using only stored defaults, if any')
-                        b8 = pm.button(l='Standards', c=pm.Callback(resetStandards), bgc=self.colReset, ann='Reset the selected objects using only transform standards for translate, rotate, scale (eg. 0, 0, 1)')
+                        b8 = pm.button(l='Standards', c=pm.Callback(resetTransform), bgc=self.colReset, ann='Reset the selected objects using only transform standards for translate, rotate, scale (eg. 0, 0, 1)')
                         b9 = pm.button(l='All', c=pm.Callback(resetAll), bgc=self.colReset2, ann='Reset all objects in the scene with defaults')
                         pm.formLayout(resetForm, e=True,
                             ap=[(b6, 'left', 0, 0), (b6, 'right', 2, 25),
@@ -185,9 +185,14 @@ def setDefaultsForAttrs(attrs):
 
 
 
-def getObjectsWithDefaults():
-    """ Return all objects with defaults """
-    return [obj for obj in pm.ls() if obj.hasAttr(DEFAULTS_ATTR)]
+def getObjectsWithDefaults(nodes=None):
+    """
+    Return all objects with defaults.
+    Searches the given nodes, or all nodes if none are given.
+    """
+    if nodes is None:
+        nodes = pm.ls()
+    return [obj for obj in nodes if obj.hasAttr(DEFAULTS_ATTR)]
 
 def getDefaultsAttr(node, create=False):
     """ Return the defaults attribute for the given nodeect """
@@ -282,10 +287,10 @@ def resetSmart(nodes=None):
     reset(nodes, useDefaults=True, useStandards=True)
 
 def resetXform(*args, **kwargs):
-    pm.warning('boResetter.resetXForm() is deprecated. please use resetStandards() instead.')
-    resetStandards()
+    pm.warning('boResetter.resetXForm() is deprecated. please use resetTransform() instead.')
+    resetTransform()
 
-def resetStandards(nodes=None):
+def resetTransform(nodes=None):
     reset(nodes, useDefaults=False, useStandards=True)
 
 def resetAll():
@@ -314,16 +319,16 @@ def reset(nodes=None, useDefaults=True, useStandards=False, useCBSelection=True)
     selAttrs = getChannelBoxSelection()
     for n in nodes:
         settings = {}
-        # add standard transform reset values
-        if useStandards and not useDefaults:
-            for a in [i+j for i in 'trs' for j in 'xyz']:
-                # standards are only added if they are settable
-                if n.hasAttr(a) and n.attr(a).isSettable():
-                    settings[n.attr(a)] = 1 if 's' in a else 0
         # add stored defaults
         if useDefaults:
             defaults = getDefaults(n)
             settings.update(defaults)
+        # add standard transform reset values
+        if useStandards and len(settings) == 0:
+            for a in [i+j for i in 'trs' for j in 'xyz']:
+                # standards are only added if they are settable
+                if n.hasAttr(a) and n.attr(a).isSettable():
+                    settings[n.attr(a)] = 1 if 's' in a else 0
         # trim using cb selection
         if useCBSelection and len(selAttrs) > 0:
             nodeSelAttrs = {} if not selAttrs.has_key(n) else selAttrs[n]
