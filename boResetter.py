@@ -82,8 +82,8 @@ class GUI(object):
                 with pm.frameLayout(l='Reset', bs='out', mw=2, mh=2) as resetFrame:
                     with pm.formLayout(nd=100) as resetForm:
                         b6 = pm.button(l='Smart', c=pm.Callback(resetSmart), bgc=self.colReset, ann='Reset the selected objects. Uses transform standards if no defaults are defined for translate, rotate, and scale')
-                        b7 = pm.button(l='Defaults', c=pm.Callback(resetDefault), bgc=self.colReset, ann='Reset the selected objects using only stored defaults, if any')
-                        b8 = pm.button(l='Standards', c=pm.Callback(resetTransform), bgc=self.colReset, ann='Reset the selected objects using only transform standards for translate, rotate, scale (eg. 0, 0, 1)')
+                        b7 = pm.button(l='Default', c=pm.Callback(reset), bgc=self.colReset, ann='Reset the selected objects using only stored defaults, if any')
+                        b8 = pm.button(l='Transform', c=pm.Callback(resetTransform), bgc=self.colReset, ann='Reset the selected objects using only transform standards for translate, rotate, scale (eg. 0, 0, 1)')
                         b9 = pm.button(l='All', c=pm.Callback(resetAll), bgc=self.colReset2, ann='Reset all objects in the scene with defaults')
                         pm.formLayout(resetForm, e=True,
                             ap=[(b6, 'left', 0, 0), (b6, 'right', 2, 25),
