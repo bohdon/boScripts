@@ -2,7 +2,7 @@
 	Smear
 	2.0.3
 	
-	Copyright © 2011 Bohdon Sayre
+	Copyright Â© 2011 Bohdon Sayre
 	All Rights Reserved.
 	bsayre@c.ringling.edu
 	
@@ -134,17 +134,8 @@ global proc boSmear() {
 	
 	window -e -w 292 -h 320 $bsmWin;
 	showWindow $bsmWin;
-	
-	
-	//check for scripts
-	$p2SurfWhatIs = `whatIs parentToSurface`;
-	$link = "http://www.ringling.edu/~bsayre/scripts/";
-	
-	if ($p2SurfWhatIs == "Unknown") {
-		warning ("please install parentToSurface: "+$link);
-		confirmDialog -t "parentToSurface needed" -p bsmWin -m ("The parentToSurface script was not found.\nPlease make sure it is installed.\nSee script editor for link.") -b "OK" -ds "OK" -db "OK";
-	}
 }
+
 global proc bsmUpdateCameraList() {
 //clears the camera list and updates it with the current available cameras
 
