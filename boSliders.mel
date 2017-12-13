@@ -1,6 +1,6 @@
 /*
     Sliders
-    1.1
+    1.2
     
     Copyright © 2010 Bohdon Sayre
     All Rights Reserved.
@@ -12,7 +12,7 @@
     
     unique prefix: bsldr
     
-    Version 1.1:
+    Version 1.2:
         > Added menu option for immediate cleanup
         > Added Maya 2011 Compatibility
         > 5 Major corner interpolation modes which can be mixed on a single control
@@ -42,8 +42,8 @@
 
 
 global proc boSliders() {
-	if (!`exists brcmRegisterCondition`)
-		error ("Sorry, boSliders requires boRightClickManager...");
+	// if (!`exists brcmRegisterCondition`)
+	// 	error ("Sorry, boSliders requires boRightClickManager...");
 	
 	string $version = `about -v`;
 	int $is2011 = (`match "2011" $version` != "" ? 1 : 0);
@@ -61,17 +61,17 @@ global proc boSliders() {
     
     //create window
 	window -rtf 1 -mb 1 -mxb 0 -s 1
-		-t "Sliders 1.1"
-		-mnc ("window -e -t \"Sliders 1.1\" "+$win+";") $win;
+		-t "Sliders 1.2"
+		-mnc ("window -e -t \"Sliders 1.2\" "+$win+";") $win;
 	
     //menus
-    menu -l "File";
-        menuItem -l "Save Slider Setup to File... (coming soon)" -en 0;
-        menuItem -l "Build Slider Setup from File... (coming soon)" -en 0;
+    // menu -l "File";
+    //     menuItem -l "Save Slider Setup to File... (coming soon)" -en 0;
+    //     menuItem -l "Build Slider Setup from File... (coming soon)" -en 0;
     menu -l "Edit";
         menuItem -l "Run Cleanup Now" -ann "Finds loose utilities, unused shaders/nodes and deletes them. This is run automatically when the window is closed." -c "bsldrCleanup(1)";
-    menu -l "Help";
-        menuItem -l "View Help Docs (coming soon)" -en 0;
+    // menu -l "Help";
+    //     menuItem -l "View Help Docs (coming soon)" -en 0;
     
     
 	//main layout
@@ -79,10 +79,6 @@ global proc boSliders() {
 	    // create button	
 	    button -l "Create New Slider" -c "bsldrCreateSliderAuto()" -ann "Create a new slider. Prompts for the slider name." bsldrWin_CreateBtn;
 		string $sep = `separator -h 4 -st "in"`;
-		
-		//active ctl controls
-		textField -en 0 -tx "" -ann "The currently active control. Connections are made on this control." bsldrWin_CurCtlField;
-		text -l "Active:" bsldrWin_CurCtlText;
 		
 		// interpolation menu
 		text -l "Corner Interpolation: " -ann "The type of interpolation used when a corner connection is made. See the help docs for info." bsldrWin_InterpolText;
@@ -94,6 +90,16 @@ global proc boSliders() {
 			menuItem -l "Triple Blend";
 		optionMenu -e -sl 2 bsldrWin_InterpolMenu;
 		
+		//active ctl controls
+		textField -en 0 -tx "" -ann "The currently active control. Connections are made on this control." bsldrWin_CurCtlField;
+		text -l "Active:" bsldrWin_CurCtlText;
+
+		// TEMP: marking menu area, until rewritten to use new rightClickMenuManager
+		frameLayout -lv 0 -h 100 bsldrWin_menuFrame;
+			text -l "Edit Menu" -en 0;
+			popupMenu -b 1 -mm 1 -aob 1 -pmc "bsldrRightClickPostMenuCommand \"bsldrWin_lmb_editMenu\"" -parent bsldrWin_menuFrame bsldrWin_lmb_editMenu;
+			popupMenu -b 3 -mm 1 -aob 1 -pmc "bsldrRightClickPostMenuCommand \"bsldrWin_rmb_editMenu\"" -parent bsldrWin_menuFrame bsldrWin_rmb_editMenu;
+			setParent ..;
 		
 		//hidden controls
 		text -vis 0 -l "" bsldrWin_LastNameTxt;
@@ -110,17 +116,22 @@ global proc boSliders() {
 		-ac $sep "top" 3 bsldrWin_CreateBtn
 		-af $sep "left" 6
 		-af $sep "right" 6
+	
+		-ac bsldrWin_InterpolText "top" 10 $sep
+		-af bsldrWin_InterpolText "left" 8
+		-ac bsldrWin_InterpolMenu "top" 8 $sep
+		-ac bsldrWin_InterpolMenu "left" 4 bsldrWin_InterpolText
 		
-		-ac bsldrWin_CurCtlText "top" 5 $sep
+		-ac bsldrWin_CurCtlText "top" 5 bsldrWin_InterpolMenu
 		-af bsldrWin_CurCtlText "left" 5
-		-ac bsldrWin_CurCtlField "top" 3 $sep
+		-ac bsldrWin_CurCtlField "top" 3 bsldrWin_InterpolMenu
 		-ac bsldrWin_CurCtlField "left" 3 bsldrWin_CurCtlText
 		-af bsldrWin_CurCtlField "right" 4
-	
-		-ac bsldrWin_InterpolText "top" 10 bsldrWin_CurCtlText
-		-af bsldrWin_InterpolText "left" 8
-		-ac bsldrWin_InterpolMenu "top" 8 bsldrWin_CurCtlText
-		-ac bsldrWin_InterpolMenu "left" 4 bsldrWin_InterpolText
+
+		-af bsldrWin_menuFrame "left" 4
+		-af bsldrWin_menuFrame "right" 4
+		-af bsldrWin_menuFrame "bottom" 4
+		-ac bsldrWin_menuFrame "top" 4 bsldrWin_CurCtlField
 		
 		bsldrWin_MainForm;
     
@@ -129,8 +140,8 @@ global proc boSliders() {
 	
 	//create right click condition
 	//attached to window, changes the right click function using boRightClickManager
-	brcmRegisterCondition("bsldrRightClickCondition", 0);
-	brcmRegisterHitCondition("bsldrRightClickHitCondition");
+	//brcmRegisterCondition("bsldrRightClickCondition", 0);
+	//brcmRegisterHitCondition("bsldrRightClickHitCondition");
 	//setup a scriptjob to monitor the windows deletion
 	scriptJob -uid $win "bsldrScriptJobCleanup";
 }
@@ -145,8 +156,8 @@ global proc bsldrScriptJobCleanup() {
 
 	//sometimes this is run when the window is recreated, so we should only do it if the window doesn't exist
 	if (!`window -ex bsldrWin`) {
-		brcmRemoveCondition("bsldrRightClickCondition");
-		brcmRemoveHitCondition("bsldrRightClickHitCondition");
+		// brcmRemoveCondition("bsldrRightClickCondition");
+		// brcmRemoveHitCondition("bsldrRightClickHitCondition");
 		bsldrCleanup(1);
 	}
 }
@@ -182,6 +193,13 @@ global proc string bsldrRightClickCondition() {
 		return "";
 	
 }
+
+global proc bsldrRightClickPostMenuCommand(string $parentName) {
+	setParent -m $parentName;
+	popupMenu -e -dai $parentName;
+	bsldrRightClickMenu($parentName);
+}
+
 global proc bsldrRightClickMenu(string $parentName) {
 //builds the right click menu for setting up boSliders
 
@@ -282,7 +300,7 @@ global proc bsldrRightClickMenu(string $parentName) {
 			menuItem -l "Auto 4 Edges" -c ("bsldrAutoConnectMultipleToCtl(\"fourEdges\", \"channel\")");
 			menuItem -l "Auto 4 Corners" -c ("bsldrAutoConnectMultipleToCtl(\"fourCorners\", \"channel\")");
 		}
-	} else if (size(`bsldrGetTargetBlend $selList[0]`)) {
+	} else if (size($selList) && size(`bsldrGetTargetBlend $selList[0]`)) {
 		//menu for blendshape targets
 		menuItem -bld 1 -rp "N" -l "+y"
 			-c ("bsldrConnectSelectionToCtl(\"blendTarget\", 0, 1)");
@@ -308,6 +326,10 @@ global proc bsldrRightClickMenu(string $parentName) {
 			menuItem -l "Auto 4 Edges" -c ("bsldrAutoConnectMultipleToCtl(\"fourEdges\", \"blendTarget\")");
 			menuItem -l "Auto 4 Corners" -c ("bsldrAutoConnectMultipleToCtl(\"fourCorners\", \"blendTarget\")");
 		}
+	} else {
+		menuItem -l "Select a slider," -en 0;
+		menuItem -l "channel box attribute," -en 0;
+		menuItem -l "or blend shape" -en 0;
 	}
 }
 global proc string bsldrRightClickHitCondition(string $object) {
