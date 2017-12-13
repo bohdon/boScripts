@@ -1,18 +1,6 @@
-[submodule "boGizmo"]
-	path = boGizmo
-	url = git@github.com:bohdon/boGizmo.git
 [submodule "boTools"]
 	path = boTools
 	url = git@github.com:bohdon/boTools.git
 [submodule "viewGui"]
 	path = viewGui
 	url = git@github.com:bohdon/viewGui.git
-[submodule "boRigs"]
-	path = boRigs
-	url = git@github.com:bohdon/boRigs.git
-[submodule "boLighting"]
-	path = boLighting
-	url = git@github.com:bohdon/boLighting.git
-[submodule "boAnimation"]
-	path = boAnimation
-	url = git@github.com:bohdon/boAnimation.git
