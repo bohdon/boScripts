@@ -1,6 +1,3 @@
 [submodule "boTools"]
 	path = boTools
 	url = git@github.com:bohdon/boTools.git
-[submodule "viewGui"]
-	path = viewGui
-	url = git@github.com:bohdon/viewGui.git
