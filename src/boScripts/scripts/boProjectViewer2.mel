@@ -16,7 +16,7 @@ proc string[] pv_ActionSetup2 ( string $newAction )
 
 	string $actionOptions[11];
 	//$actionOptions[0] == Localized label for the action. eg. "Save As"
-	//$actionOptions[1] == File type for the action.  eg. "mayaBinary", "Best Guess" 
+	//$actionOptions[1] == File type for the action.  eg. "mayaBinary", "Best Guess"
 	//$actionOptions[2] == File mode for the dialog.
 	//					Value:    Returns
 	//					  0          Any file.  The name of a file, whether it exists or not.
@@ -116,10 +116,10 @@ proc string[] pv_ActionSetup2 ( string $newAction )
 		$actionOptions[9] = `setWorkingDirectory $workspace $readType "scene"`;
         break;
 	  }
-      case "Save": 
+      case "Save":
 	  {
 		$gv_operationMode = "SaveAs";
-		if (`optionVar -exists defaultFileSaveType`) 
+		if (`optionVar -exists defaultFileSaveType`)
 		{
 			$saveType = `optionVar -q defaultFileSaveType`;
 		}
@@ -130,9 +130,9 @@ proc string[] pv_ActionSetup2 ( string $newAction )
 		$actionOptions[9] = `setWorkingDirectory $workspace $readType "scene"`;
 		break;
       }
-      case "SaveAs": 
+      case "SaveAs":
 	  {
-		if (`optionVar -exists defaultFileSaveType`) 
+		if (`optionVar -exists defaultFileSaveType`)
 		{
 			$saveType = `optionVar -q defaultFileSaveType`;
 		}
@@ -180,7 +180,7 @@ proc string[] pv_ActionSetup2 ( string $newAction )
 		$actionOptions[9] = `setWorkingDirectory $workspace $readType "scene"`;
         break;
       }
-	case "ExportOfflineFileFromRefEd":		  
+	case "ExportOfflineFileFromRefEd":
       case "ExportOfflineFile": {
 		if (`optionVar -exists defaultFileExportEditsType`) {
 			$saveType = `optionVar -q defaultFileExportEditsType`;
@@ -211,7 +211,7 @@ proc string[] pv_ActionSetup2 ( string $newAction )
 		$actionOptions[5] = "fileOperationsSelectionChangedCallback " + $newAction;
 		$actionOptions[6] = "fileOperationsOptionsUICallback " + $newAction;
 		$actionOptions[7] = "setCurrentFileTypeOption " + $newAction;
-		$actionOptions[8] = buildDefaultReadWriteOfflineEditFilterList();		
+		$actionOptions[8] = buildDefaultReadWriteOfflineEditFilterList();
 		$actionOptions[9] = `setWorkingDirectory $workspace $readType "scene"`;
         break;
       }
@@ -236,7 +236,7 @@ proc string[] pv_ActionSetup2 ( string $newAction )
 		$actionOptions[5] = "fileOperationsSelectionChangedCallback AssignTemplate";
 		$actionOptions[6] = "fileOperationsOptionsUICallback AssignTemplate";
 		$actionOptions[7] = "setCurrentFileTypeOption AssignTemplate";
-		$actionOptions[8] = buildContainerTemplateFilterList();		
+		$actionOptions[8] = buildContainerTemplateFilterList();
 		$actionOptions[9] = `setWorkingDirectory $workspace "templates" ""`;
 		break;
       }
@@ -286,7 +286,7 @@ global proc int projectViewer2 ( string $startUpAction, string $startDir )
     {
         hideOptionBoxNow();
     }
-    
+
 	string $file[] = `eval $cmd`;
 
     if( size($file) > 0 && $file[0] != "" )
@@ -297,5 +297,3 @@ global proc int projectViewer2 ( string $startUpAction, string $startDir )
 
 	return 1;
 }
-
-

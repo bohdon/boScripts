@@ -32,13 +32,13 @@
 global proc bbsMultiBlendSlider() {
     //window name
     $win = "bbsMultiBlendSliderWin";
-    
+
     //check for pre-existing window
     if (`window -ex $win`) deleteUI -wnd $win;
-    
+
     //create window
     window -w 100 -h 100 -rtf 1 -s 0 -tlb 1 -mb 1 -mxb 0 -t "Multi Blend Slider 2.1" -mnc ("window -e -t \"Multi Blend Slider 2.1\" "+$win+";") $win;
-    
+
     //main layout
     formLayout -nd 100 bbsMultiBlendSliderForm;
         floatSliderGrp -field 1 -step .001 -minValue 0 -maxValue 1 -cw2 50 200
@@ -50,19 +50,19 @@ global proc bbsMultiBlendSlider() {
 		$btn3 = `button -l ".5" -al "center" -c "bbsMultiBlendSet(.5, 1, 0)"`;
 		$btn4 = `button -l ".666" -al "center" -c "bbsMultiBlendSet(.666666, 1, 0)"`;
 		$btn5 = `button -l "1" -al "center" -c "bbsMultiBlendSet(1, 1, 0)"`;
-	
+
 	formLayout -e
 		-ap bbsMultiBlendSliderSlider "top" 1 0
 		-ap bbsMultiBlendSliderSlider "left" 1 0
 		-ap bbsMultiBlendSliderSlider "right" 1 100
-		
+
 		-ac $btn1 "top" 1 bbsMultiBlendSliderSlider -ap $btn1 "left" 1 0 -ap $btn1 "right" 1 20
 		-ac $btn2 "top" 1 bbsMultiBlendSliderSlider -ap $btn2 "left" 1 20 -ap $btn2 "right" 1 40
 		-ac $btn3 "top" 1 bbsMultiBlendSliderSlider -ap $btn3 "left" 1 40 -ap $btn3 "right" 1 60
 		-ac $btn4 "top" 1 bbsMultiBlendSliderSlider -ap $btn4 "left" 1 60 -ap $btn4 "right" 1 80
 		-ac $btn5 "top" 1 bbsMultiBlendSliderSlider -ap $btn5 "left" 1 80 -ap $btn5 "right" 1 100
 		bbsMultiBlendSliderForm;
-    
+
     window -e -w 215 -h 72 $win;
     showWindow $win;
 }
@@ -74,20 +74,20 @@ global proc bbsMultiBlendSlide(int $undo) {
 }
 
 global proc bbsMultiBlendSet(float $val, int $undo, int $fromSlider) {
-	
+
 	if (!$fromSlider) {
 		//if the value came from the slider, we don't want to do this
 		floatSliderGrp -e -v $val bbsMultiBlendSliderSlider;
 	}
-    
+
     string $selList[] = `ls -sl`;
     if (!size($selList))
 		return;
-    
+
     undoInfo -swf $undo;
-	
+
     for ($obj in $selList) {
-		
+
 		//check if they're targets
         $objBS = `bbsGetTargetBlend $obj`;
         if (`objExists($objBS+"."+$obj)`) {
@@ -99,7 +99,7 @@ global proc bbsMultiBlendSet(float $val, int $undo, int $fromSlider) {
 			//found that it was a target, so go to the next loop
 			continue;
 		}
-		
+
 		//check if they're base heads
 		string $blendShapes[] = `bbsGetBlendShapes $obj`;
 		if (!size($blendShapes)) {
@@ -107,7 +107,7 @@ global proc bbsMultiBlendSet(float $val, int $undo, int $fromSlider) {
 				$blendShapes[0] = $obj;
 			}
 		}
-		
+
 		//one way or another, if a base or blendshape is selected, the list size will be > 0
 		if (size($blendShapes)) {
 			string $bs = $blendShapes[0];
@@ -121,7 +121,7 @@ global proc bbsMultiBlendSet(float $val, int $undo, int $fromSlider) {
 			}
 		}
     }
-	
+
 	undoInfo -swf $undo;
 }
 
@@ -132,10 +132,10 @@ global proc bbsMultiBlendKey() {
     //undo should only be enabled on release, otherwise the queue will be flooded
     string $selList[] = `ls -sl`;
     if (!size($selList)) return ;
-    
+
     for ($obj in $selList) {
         $objBS = `bbsGetTargetBlend $obj`;
-    
+
         if (!`objExists($objBS+"."+$obj)`) continue ;
         evalEcho("setKeyframe "+$objBS+"."+$obj);
     }
@@ -179,7 +179,7 @@ global proc bbsAddInbetween() {
                         bbsAIBlendShapeCheck;
                     optionMenu -vis 0 -cc "bbsAIGetBlendTargets" bbsAIBlendShapeOptionMenu;
                     setParent bbsAIColumnMain;
-    
+
         separator -h 8;
         columnLayout -w 500 -h 70 bbsAIColumnTarget;
             rowLayout -nc 3 -cw3 160 80 220 -cl3 "right" "left" "left";
@@ -198,7 +198,7 @@ global proc bbsAddInbetween() {
                     textField -vis 0 -w 280 bbsAITargetField;
                     optionMenu -vis 0 -acc -cc "bbsAISetBlendTarget" bbsAITargetOptionMenu;
                     setParent bbsAIColumnMain;
-    
+
         separator -h 8;
         columnLayout -w 500 -h 70 bbsAIColumnWeights;
             rowLayout -nc 3 -cw3 160 80 220 -cl3 "right" "left" "left";
@@ -207,10 +207,10 @@ global proc bbsAddInbetween() {
                     checkBox -v 1 -l "Automatic" -cc "floatSliderGrp -e -vis (`checkBox -q -v bbsAIInbetweenCheck` ? 0 : 1) bbsAIInbetweenSlider;" bbsAIInbetweenCheck;
                     floatSliderGrp -vis 0 -field 1 -min 0 -max 1 -v .5 -step .01 -cw2 40 300 bbsAIInbetweenSlider;
                     setParent -top;
-    
+
     //status text
     text -w 500 -al "left" -fn "boldLabelFont" -l "Select inbetweens, then the target..." bbsAITipText;
-    
+
     //buttons
     button -h 26 -l "Apply and Close" -c "bbsAIApply(0); deleteUI -wnd bbsAIWin" bbsAIApplyAndCloseBtn;
     button -h 26 -l "Apply" -c "bbsAIApply(0)" bbsAIApplyBtn;
@@ -220,24 +220,24 @@ global proc bbsAddInbetween() {
         -af		bbsAIColumnMain	"top"	5
         -af		bbsAIColumnMain "left"	5
         -af		bbsAIColumnMain	"right"	5
-    
+
         -af		bbsAIApplyAndCloseBtn	"bottom"	5
         -ap		bbsAIApplyAndCloseBtn	"left"	5 0
         -ap		bbsAIApplyAndCloseBtn	"right"	2 33
-    
+
         -af		bbsAIApplyBtn	"bottom"	5
         -ap		bbsAIApplyBtn	"left"	2 33
         -ap		bbsAIApplyBtn	"right" 2 66
-    
+
         -af     bbsAITipText    "bottom" 36
         -af     bbsAITipText    "left"  5
-    
+
         -af		bbsAICloseBtn	"bottom" 5
         -ap		bbsAICloseBtn	"left"	2 66
         -ap		bbsAICloseBtn	"right"	5 100
     bbsAIFormMain;
-    
-    
+
+
     window -e -w 548 -h 384 $bbsAIWin;
     showWindow $bbsAIWin;
     }
@@ -254,7 +254,7 @@ global proc bbsAddInbetween() {
             menuItem -p bbsAIBlendShapeOptionMenu -l $bs;
         }
     }
-    
+
     bbsAIGetBlendTargets;
 }
 global proc bbsAIGetBlendTargets() {
@@ -276,7 +276,7 @@ global proc bbsAIGetBlendTargets() {
 }
 global proc bbsAISetBlendTarget() {
     textField -e -tx "" bbsAITargetField;
-    
+
     if (!`optionMenu -q -ni bbsAITargetOptionMenu`) return ;
     string $name = `optionMenu -q -v bbsAITargetOptionMenu`;
     textField -e -tx $name bbsAITargetField;
@@ -293,13 +293,13 @@ global proc bbsAIApply(int $allAuto) {
     int $blendAuto = 1;
     int $targetAuto = 1;
     int $weightsAuto = 1;
-    
+
     if (!$allAuto && `window -ex bbsAIWin`) {
         $blendAuto = `checkBox -q -v bbsAIBlendShapeCheck`;
         $targetAuto = `checkBox -q -v bbsAITargetCheck`;
         $weightsAuto = `checkBox -q -v bbsAIInbetweenCheck`;
     }
-    
+
     string $blendShape[], $blendInbs[], $blendBase, $blendTarget;
     int $index;
     float $weights;
@@ -308,7 +308,7 @@ global proc bbsAIApply(int $allAuto) {
         error "nothing selected";
         return;
     }
-    
+
     if ($targetAuto) {
         $blendTarget = $selList[size($selList)-1];
         $blendInbs = $selList;
@@ -317,7 +317,7 @@ global proc bbsAIApply(int $allAuto) {
         $blendTarget = `textField -q -tx bbsAITargetField`;
         $blendInbs = $selList;
     }
-    
+
     //blendshape
     if ($blendAuto) {
         string $objShape[] = `listRelatives -c -s $blendTarget`;
@@ -343,33 +343,33 @@ global proc bbsAIApply(int $allAuto) {
         error ("target '"+$blendTarget+"' does not exist");
         return ;
     }
-    
+
     //get base
     $connections = `blendShape -q -g $blendShape[0]`;
     $connections = `listRelatives -p -f $connections[0]`;
     $blendBase = $connections[0];
-    
+
     //get the target index
     $index = `bbsGetBlendTargetIndex $blendShape[0] $blendTarget`;
     if ($index == -1) {
         error ("target '"+$blendTarget+"' is not hooked up to '"+$blendShape[0]+"'");
         return ;
     }
-    
+
     //get weights
     if ($weightsAuto) {
         $weights = (float)1/(size($blendInbs)+1);
     } else {
         $weights = `floatSliderGrp -q -v bbsAIInbetweenSlider`;
     }
-    
+
     string $command = "blendShape -e -ib ";
     for ($i = 0; $i < size($blendInbs); $i++) {
         float $thisWeight = floor(($weights * ($i+1))*1000)/(float)1000;
         $command += ("-t "+$blendBase+" "+$index+" "+$blendInbs[$i]+" "+$thisWeight+" ");
     }
     $command += (""+$blendShape[0]);
-    
+
     evalEcho ($command);
 }
 //====================================================================================================
@@ -390,7 +390,7 @@ global proc bbsRec_buildShape(string $base, float $pointArray[], string $compArr
 		error "bbsRec_buildShape: no point array was passed. cannot recreate blend shape";
 	if (!size($compArray))
 		error "bbsRec_buildShape: no component array was passed. cannot recreate blend shape";
-	
+
 	//get the base shape
 	string $baseShape;
 	if (1) {
@@ -399,15 +399,15 @@ global proc bbsRec_buildShape(string $base, float $pointArray[], string $compArr
 			return;
 		$baseShape = $buffer[0];
 	}
-	
+
 	//evaluate if the base shape is mesh
 	if (`nodeType $baseShape` != "mesh")
 		error "bbsRec_buildShape: the base shape was not of type mesh";
-	
+
 	//get the mel command by using python to evaluate each vertices movement
 	python("import boBlendShapes");
 	python("reload(boBlendShapes)");
-	
+
 }
 
 global proc string[] bbsGetBlendShapes( string $base) {
@@ -416,11 +416,11 @@ global proc string[] bbsGetBlendShapes( string $base) {
     if (!`objExists $base`) return {};
     string $baseShape[] = `listRelatives -s -c $base`;
     if (!size($baseShape)) return {};
-    
+
     string $blendShapes[] = `listConnections -d 0 ($baseShape[0]+".inMesh")`;
     if (!size($blendShapes)) return {};
     $blendShapes = {$blendShapes[0]};
-    
+
     $hasConnect = 1;
     while($hasConnect) {
         string $tempCon[] = `listConnections -d 0 $blendShapes[size($blendShapes)-1]`;
@@ -436,7 +436,7 @@ global proc string[] bbsGetBlendShapes( string $base) {
             $blendShapes = stringArrayRemove({$blendShapes[$i]}, $blendShapes);
         }
     }
-    
+
     return $blendShapes;
 }
 
@@ -477,7 +477,7 @@ global proc string bbsGetBlendTarget(string $blendShape, int $index, float $weig
     if (!`objExists $blendShape`) return "";
     string $inAttr = ($blendShape+".inputTarget[0].inputTargetGroup["+$index+"].inputTargetItem["+($weight*1000+5000)+"].inputGeomTarget");
     string $blendTargets[] = `listConnections -t shape -d 0 $inAttr`;
-    
+
     return $blendTargets[0];
 }
 
@@ -503,7 +503,7 @@ global proc string bbsGetTargetBlend(string $target) {
     string $targetBS[] = `listConnections -t blendShape -s 0 $targetShape[0]`;
     //$targetBS[0] is the blendshape node
     if (!size($targetBS)) return "" ;
-    
+
     return $targetBS[0];
 }
 //====================================================================================================

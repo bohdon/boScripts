@@ -55,12 +55,12 @@ global proc bgeAddTangentMenu() {
 
 	//delete previous rp items
 	bgeClearTangentMenu($graphEd);
-	
+
 	//set some vars
 	string $graphEdCurveEd = ($graphEd+"GraphEd");
 	global int $bgeTangentVis;
 	$bgeTangentVis = `animCurveEditor -q -dtn $graphEdCurveEd`;
-	
+
 	//add radial-positioned menu items
 	popupMenu -e -mm 1 $graphEdMenu;
 	setParent -menu $graphEdMenu;
@@ -110,7 +110,7 @@ global proc bgeClearTangentMenu(string $graphEd) {
 //====================================================================================================
 global proc bgeIsolateCurves() {
 //toggle between showing only the selected, or all curves
-	
+
 	//check if cb attrs are selected, otherwise toggle as normal
 	if (size(`keyframe -q -sl -n`)) {
 		bgeDispCurves(1);
@@ -126,24 +126,24 @@ global proc bgeDispCurves(int $selected) {
 
 
 	string $graphOutlineEd = getGraphEditorOutlinerEd();
-	
+
 	string $curves[];
 	if ($selected) {
 		$curves = `keyframe -q -sl -n`;
 		if (!size($curves)) //nothings selected
 			return;
-	} else {		
+	} else {
 		string $mainConn = `editor -q -mlc $graphOutlineEd`;
 		$curves = `findAnimCurves($mainConn)`;
 		if (!size($curves)) //no curves currently showing in graph editor
 			return;
 	}
-	
+
 	//clear all selections in the graph editor outliner
 	$selConn = `editor -q -slc $graphOutlineEd`;
 	print ("selConn: "+$selConn+"\n"); //pv
 	selectionConnection -e -clr $selConn;
-	
+
 	//this is the list of items we want to select
 	string $toBeSel[] = {};
 	string $cons[];
@@ -152,7 +152,7 @@ global proc bgeDispCurves(int $selected) {
 		$toBeSel[size($toBeSel)] = $cons[0];
 	}
 	$toBeSel = stringArrayRemoveDuplicates($toBeSel);
-	
+
 	for ($obj in $toBeSel)
 		selectionConnection -e -obj $obj $selConn;
 }
@@ -163,13 +163,13 @@ global proc bgeIsolateCBCurves() {
 	string $selConn = `outlinerEditor -q -slc $graphOutlineEd`;
 	string $selObjs[] = `ls -r 1 -sl -l`;
 	string $selAttrs[] = `channelBox -q -sma "mainChannelBox"`;
-	
+
 	print ("graphOutlineEd: "+$graphOutlineEd+"\n"); //pv
 	print ("selConn: "+$selConn+"\n"); //pv
 
 	if (!size($selAttrs))
 		return;
-	
+
 	selectionConnection -e -clr $selConn;
 	for ($obj in $selObjs) {
 		selectionConnection -e -deselect $obj $selConn;
@@ -182,7 +182,7 @@ global proc bgeIsolateCBCurves() {
 }
 global proc string getGraphEditorOutlinerEd() {
 //returns the first graph editor outliner editor
-	
+
 	string $graphOutlineEd;
 	string $editors[] = `lsUI -ed`;
 	for ($editor in $editors) {
@@ -202,7 +202,7 @@ global proc bgeAddIsolateCurveHotkeys() {
 	//delete existing runTimeCommands
 	if (`runTimeCommand -ex bgeIsolateAnimationCurves`) runTimeCommand -e -del bgeIsolateAnimationCurves;
 	if (`runTimeCommand -ex bgeUnisolateAnimationCurves`) runTimeCommand -e -del bgeUnisolateAnimationCurves;
-	
+
 	//runTimeCommands
 	runTimeCommand
 		-annotation "Isolate selected animation curves based on channel box or graph editor"
@@ -214,7 +214,7 @@ global proc bgeAddIsolateCurveHotkeys() {
 		-category "User"
 		-command ("source boGraphEditor;bgeUnisolateCurves;")
 		bgeUnisolateAnimationCurves;
-	
+
 	//nameCommands
 	nameCommand
 		-annotation "bgeIsolateAnimationCurvesNameCommand"
@@ -224,7 +224,7 @@ global proc bgeAddIsolateCurveHotkeys() {
 		-annotation "bgeUnisolateAnimationCurvesNameCommand"
 		-command ("bgeUnisolateAnimationCurves")
 		bgeUnisolateAnimationCurvesNameCommand;
-	
+
 	//hotkey assignments
 	hotkey -keyShortcut "d" -alt -name ("bgeIsolateAnimationCurvesNameCommand");
 	hotkey -keyShortcut "d" -ctl -alt -name("bgeUnisolateAnimationCurvesNameCommand");
@@ -237,7 +237,7 @@ global proc bgeAddTangentHotkeys() {
 	if (`runTimeCommand -ex bgeSnapToCurveAndInTangentsRelease`) runTimeCommand -e -del bgeSnapToCurveAndInTangentsRelease;
 	if (`runTimeCommand -ex bgeSnapToPointAndOutTangents`) runTimeCommand -e -del bgeSnapToPointAndOutTangents;
 	if (`runTimeCommand -ex bgeSnapToPointAndOutTangentsRelease`) runTimeCommand -e -del bgeSnapToPointAndOutTangentsRelease;
-	
+
 	//runTimeCommands
 	runTimeCommand
 		-annotation "Turn on snap to curve and only select in-tangents in Graph Editor"
@@ -259,7 +259,7 @@ global proc bgeAddTangentHotkeys() {
 		-category "User"
 		-command ("snapMode -point 0;\r\nselectType -ac 1 -ak 1 -abd 1 -ait 1 -aot 1;\r\n\r\nglobal int $bgeTangentVis;\r\n\r\nif (!$bgeTangentVis)\r\n\tanimCurveEditor -e -dtn 0 -dat 1 graphEditor1GraphEd;")
 		bgeSnapToPointAndOutTangentsRelease;
-	
+
 	//nameCommands
 	nameCommand
 		-annotation "bgeSnapToCurveAndInTangentsNameCommand"
@@ -277,7 +277,7 @@ global proc bgeAddTangentHotkeys() {
 		-annotation "bgeSnapToPointAndOutTangentsReleaseNameCommand"
 		-command ("bgeSnapToPointAndOutTangentsRelease")
 		bgeSnapToPointAndOutTangentsReleaseNameCommand;
-	
+
 	//hotkey assignments
 	hotkey -keyShortcut "c" -releaseName ("bgeSnapToCurveAndInTangentsReleaseNameCommand");
 	hotkey -keyShortcut "c" -name ("bgeSnapToCurveAndInTangentsNameCommand");
@@ -307,7 +307,7 @@ global proc bgeEnableAnimCurveInfoHUD(int $mode) {
 
 	if (`headsUpDisplay -ex HUDbgeAnimCurveInfo`)
 		headsUpDisplay -remove HUDbgeAnimCurveInfo;
-	
+
 	int $nextFree = `headsUpDisplay -nfb 5`;
 	if ($nextFree < 3)
 		$nextFree = 3;
@@ -321,7 +321,7 @@ global proc bgeEnableAnimCurveInfoHUD(int $mode) {
 		-event          "SelectionChanged"
 		-nodeChanges    "attributeChange"
 		HUDbgeAnimCurveInfo;
-	
+
 	print ("// Animation Curve Info HUD enabled...\n");
 }
 global proc bgeDisableAnimCurveInfoHUD() {
@@ -345,10 +345,10 @@ global proc string bgeAnimCurveInfoHUDCommand(int $mode) {
 		return "";
 	string $curveList[] = {};
 	int $shortNames = 0;
-	
+
 	if ($mode == 2)
 		$shrotNames = 1;
-	
+
 	if ($mode == 3) {
 		string $graphOutlineEd;
 		string $editors[] = `lsUI -ed`;
@@ -358,14 +358,14 @@ global proc string bgeAnimCurveInfoHUDCommand(int $mode) {
 				break;
 			}
 		}
-		
+
 		string $mainConn = `editor -q -mlc ($graphOutlineEd)`;
 		string $mainCurves[] = `findAnimCurves($mainConn)`;
 		string $obj1;
 		string $cons[] = `listConnections -s 0 -p 0 ($mainCurves[0]+".output")`;
 		$obj1 = $cons[0];
 		int $two = 0;
-		
+
 		//we only need 2 to cancel short names
 		for ($curve in $mainCurves) {
 			$cons = `listConnections -s 0 -p 0 ($curve+".output")`;
@@ -377,7 +377,7 @@ global proc string bgeAnimCurveInfoHUDCommand(int $mode) {
 		if ($two == 0)
 			$shortNames = 1;
 	}
-	
+
 	if ($shortNames) {
 		for ($curve in $curves) {
 			string $cons[] = `listConnections -s 0 -p 1 ($curve+".output")`;
@@ -389,10 +389,10 @@ global proc string bgeAnimCurveInfoHUDCommand(int $mode) {
 			$curveList[size($curveList)] = $cons[0];
 		}
 	}
-	
+
 	$size = size($curves);
 	$length = size(`stringArrayToString $curveList ",  "`);
-	
+
 	if ($length > 100) {
 		$result = ("("+$size+") ...");
 	} else {
@@ -401,6 +401,3 @@ global proc string bgeAnimCurveInfoHUDCommand(int $mode) {
 	return ($result);
 }
 //====================================================================================================
-
-
-

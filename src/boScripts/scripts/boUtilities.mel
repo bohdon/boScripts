@@ -18,8 +18,8 @@
 		> Externalized all mult-procedure scripts
 		>
 		> Utils:
-		> Cleanup:    
-		>	Rename File Textures            
+		> Cleanup:
+		>	Rename File Textures
 		>	Rename Shading Gruops
 		>	Lock File Texture Paths
 		>	Unlock File Texture Paths
@@ -46,7 +46,7 @@
 		> Coming in future versions:
 		> 	Quick Render Setup - including renderable cams and frame range check
 		> 	jEdit Command Port Setup
-	
+
 	Feel free to email me with any bugs, comments, or requests!
 */
 
@@ -55,14 +55,14 @@ global proc boUtilities() {
 /** The boUtilities GUI, contains tabbed pages with buttons for every utility **/
 	//window name
 	$win = "butilWin";
-	
+
 	//check for pre-existing window
 	if (`window -ex $win`) deleteUI -wnd $win;
-	
+
 	//create window
 	window -w 260 -mxb 0 -t "Bo Utilities 2.4" -mnc ("window -e -t \"Bo Utilities 2.4\" "+$win+";") $win;
 	window -e -h 10 $win;
-    
+
 	formLayout -nd 100 butilMainForm;
 	tabLayout butilMainTabs;
 	formLayout -e
@@ -71,7 +71,7 @@ global proc boUtilities() {
 		-ap butilMainTabs "top" 4 0
 		-ap butilMainTabs "bottom" 4 100
 		butilMainForm;
-	
+
 	butilWin_addTab("Cleanup");
 	butilWin_addItem("Cleanup", "Rename File Textures", "source boUtilities; butilRenameFileTextures;", "Renames all selected file texture nodes to their sourced image and adds the suffix \"_file\".", 0);
 	butilWin_addItem("Cleanup", "Rename Shading Groups", "source boUtilities; butilRenameShadingGroups;", "Renames all selecetd shading groups to their materials name. Strips the '_mat' suffix if it exists", 1);
@@ -96,8 +96,8 @@ global proc boUtilities() {
 	butilWin_addItem("Misc", "Parent Shape (Move)", "boParentShape(0);", "Parents the selected shapes to the specified transform. Shapes are moved to the new transform, and removed from their previous parent. Select shapes first, then transform.", 1);
 	butilWin_addItem("Misc", "Reset Main Transform Attributes", "source boUtilities; boModifyAttrs(`ls -sl`, {\"[all]\"}, 0, 1, 1);", "Resets the transform, rotate, scale, and visibility attributes of the selected objects so that they are visible in the channelBox, unlocked, and keyable.", 0);
 	butilWin_addItem("Misc", "Get Vertex Distance", "source boUtilities; butilPrintVertexDistance;", "Prints the distance between two selected vertices. Used as a quick measuring tool.", 0);
-	
-	
+
+
 	window -e -w 270 -h 322 $win;
 	showWindow $win;
 }
@@ -118,14 +118,14 @@ global proc butilWin_addItem(string $tab, string $title, string $cmd, string $an
 	//get main form and the 'last control' textField
 	string $form = ("butilWin_form_"+$tab);
 	string $lastCtlField = ("butilWin_lastCtl_"+$tab);
-	
+
 	//create button
 	setParent $form;
 	string $btn = `button -l $title -c $cmd -ann $ann`;
-	
+
 	//attach to left and right
 	formLayout -e -ap $btn "left" 4 0 -ap $btn "right" 4 100 $form;
-	
+
 	//check for a 'last control', and if found, attach to the top
 	string $lastCtl = `textField -q -tx $lastCtlField`;
 	int $buffer = ($groupWithPrev ? 4 : 16);
@@ -133,7 +133,7 @@ global proc butilWin_addItem(string $tab, string $title, string $cmd, string $an
 		formLayout -e -ac $btn "top" $buffer $lastCtl $form;
 	else
 		formLayout -e -ap $btn "top" 6 0 $form;
-	
+
 	//update the last control value
 	textField -e -tx $btn $lastCtlField;
 }
@@ -150,10 +150,10 @@ global proc butilDeleteLightCameras() {
 		print ("// no lights found...\n");
 		return ;
 	}
-	
+
 	int $lightCamCount = 0;
 	string $lightCamList[];
-	
+
 	//find all the light cameras
 	for ($light in $lightList) {
 		string $relatives[] = `listRelatives -f -p $light`;
@@ -165,7 +165,7 @@ global proc butilDeleteLightCameras() {
 			}
 		}
 	}
-	
+
 	//check list to see if any cameras exist, if so delete them all
 	if (!size($lightCamList)) {
 		print ("// no light-cameras were found...\n");
@@ -229,9 +229,9 @@ global proc butilRenameFileTextures() {
 		warning ("no objects selected...\n");
 		return;
 	}
-	
+
 	int $ftnRenameCount;
-	
+
 	for ($obj in `ls -sl`) {
 		string $objType = `nodeType $obj`;
 		//skip any objects that aren't file nodes
@@ -246,7 +246,7 @@ global proc butilRenameFileTextures() {
 		rename $obj ($image+"_file");
 		$ftnRenameCount++;
 	}
-	
+
 	if (!$ftnRenameCount) {
 		print ("// no file texture nodes were renamed...\n");
 	} else {
@@ -261,13 +261,13 @@ global proc butilRenameShadingGroups() {
 		warning ("no objects selected...\n");
 		return;
 	}
-	
+
 	int $sgRenameCount;
-	
+
 	for ($obj in $selList) {
 		if ($obj == "initialParticleSE" || $obj == "initialShadingGroup")
 			continue;
-		
+
 		if (`nodeType $obj` == "shadingEngine") {
 			string $connections[] = `listConnections ($obj+".surfaceShader")`;
 			string $stripMat = `substitute "_mat$" $connections[0] ""`;
@@ -276,7 +276,7 @@ global proc butilRenameShadingGroups() {
 			$sgRenameCount++;
 		}
 	}
-	
+
 	if (!$sgRenameCount) {
 		print ("// no shading group nodes were renamed...\n");
 	} else {
@@ -289,16 +289,16 @@ global proc butilRenameShadingGroups() {
 //====================================================================================================
 global proc butilFindPSDs() {
 /** Locates and selects file texture nodes with PSDs and any psdFileTex nodes for easy removal **/
-	
+
 	select -cl;
 	string $files[] = `ls -r 1 -typ "file"`;
-	
+
 	//init vars
 	int $psdCount = 0;
 	int $refPsdCount = 0;
 	string $badFileList[];
 	string $refFileList[];
-	
+
 	if (size($files)) {
 		for ($file in $files) {
 			//get file texture name
@@ -316,12 +316,12 @@ global proc butilFindPSDs() {
 			}
 		}
 	}
-	
+
 	string $psdFileTexList[] = `ls -r 1 -typ "psdFileTex"`;
 	int $psdFileTexCount = size($psdFileTexList);
-	
+
 	//select files
-	
+
 	//build confirm dialog
 	string $msg;
 	string $title;
@@ -335,16 +335,16 @@ global proc butilFindPSDs() {
 		if ($refPsdCount) {
 			$msg += ($refPsdCount + " of them are in referenced files:\n");
 			for ($file in $refFileList) {
-				$msg += ("    "+ $file +"\n");	
+				$msg += ("    "+ $file +"\n");
 			}
 		} else {
-			$msg += ("None of them are from referenced files.\n");	
+			$msg += ("None of them are from referenced files.\n");
 		}
 		//check for psdFileTexes
 		if ($psdFileTexCount) {
 			$msg += ("\nMake sure that all psdFileTex nodes\nare replaced with regular file texture nodes:\n");
 			for ($file in $psdFileTexList) {
-				$msg += ("    "+$file+"\n");	
+				$msg += ("    "+$file+"\n");
 			}
 		}
 		$btn = "Ok... :/";
@@ -382,12 +382,12 @@ global proc butilFindPSDs() {
 //====================================================================================================
 global proc butilFindMultiShaderGeo() {
 /** Finds and selects any shapes with multiple shaders attached to them **/
-	
+
 	select -cl;
 	string $geo[] = `ls -r 1 -g`;
 	string $badShapes[];
 	if (size($geo)) {
-		for ($shape in $geo) {		
+		for ($shape in $geo) {
 			string $shaders[] = `listConnections -sh 1 -d 1 -s 0 -p 0 -t "shadingEngine" $shape`;
 			if (size($shaders)) {
 				$shaders = stringArrayRemoveDuplicates($shaders);
@@ -396,7 +396,7 @@ global proc butilFindMultiShaderGeo() {
 			}
 		}
 	}
-	
+
 	int $badShapeCount = size($badShapes);
 	string $title;
 	string $msg;
@@ -412,7 +412,7 @@ global proc butilFindMultiShaderGeo() {
 		$btn = "I win! :D";
 	}
 	select -r $badShapes;
-	
+
 	confirmDialog -b $btn -db $btn -cb $btn -m $msg -ma "center" -t $title;
 }
 
@@ -426,16 +426,16 @@ global proc butilGridNclothCaching() {
 * Adds a script job and pre-render mel to cause ncloth to cache before rendering.
 * This causes the render farm to handle all caching, rather than having to cache locally first.
 **/
-	
+
     if (size(`ls -typ script "butilGridNclothCaching_sn"`) > 0)
         delete `ls -typ script "butilGridNclothCaching_sn"`;
     string $nClothList[] = `ls -typ nCloth`;
-    
+
     if (!size($nClothList)) {
         warning "no nCloths found in the scene";
         return ;
     }
-    
+
     //start script node script
     string $script;
     $script += "proc butilGridNclothCachingScript() {\n";
@@ -446,10 +446,10 @@ global proc butilGridNclothCaching() {
     $script += "}\nbutilGridNclothCachingScript;";
     string $preMel;
     $preMel = "scriptNode -eb butilGridNclothCaching_sn;";
-    
+
     scriptNode -bs $script -n butilGridNclothCaching_sn;
     setAttr -type "string" defaultRenderGlobals.preMel $preMel;
-    
+
     print ("// Ringling grid ncloth caching script setup successfully...\n");
 }
 /** Removes pre-render mel and scriptJob for ncloth caching **/
@@ -476,7 +476,7 @@ global proc butilPrintVertexDistance() {
 	if ($dist != -1) {
 		print ("// Distance: " + $dist + "\n");
 	} else {
-		print ("// Invalid selection. Select two vertices.\n");	
+		print ("// Invalid selection. Select two vertices.\n");
 	}
 }
 global proc float butilGetVertexDistance() {
@@ -486,14 +486,14 @@ global proc float butilGetVertexDistance() {
 	string $selList[] = `ls -sl -fl -r 1`;
 	if (size($selList) != 2)
 		return -1;
-	
+
 	//get the point positions
 	float $pnt1[] = `pointPosition ($selList[0])`;
 	float $pnt2[] = `pointPosition ($selList[1])`;
-	
+
 	//get the distance
 	float $dist = sqrt(pow(($pnt1[0] - $pnt2[0]), 2) + pow(($pnt1[1] - $pnt2[1]), 2) + pow(($pnt1[2] - $pnt2[2]), 2));
-	
+
 	return $dist;
 }
 
@@ -508,7 +508,7 @@ global proc boLockAutoFileTextures(int $lock, int $dispConfirm) {
 
 	string $selList[] = `ls -sl -typ "file"`;
 	if (size($selList)) {
-		boLockFileTextures($selList, $lock, $dispConfirm);	
+		boLockFileTextures($selList, $lock, $dispConfirm);
 	} else {
 		string $verbs[] = ($lock ? {"lock", "Lock"} : {"unlock", "Unlock"});
 		string $fileNodes[] = `ls -typ "file"`;
@@ -518,7 +518,7 @@ global proc boLockAutoFileTextures(int $lock, int $dispConfirm) {
 		if ($result == "Yes")
 			boLockFileTextures($fileNodes, $lock, $dispConfirm);
 	}
-	
+
 }
 global proc boLockFileTextures(string $objs[], int $lock, int $dispConfirm) {
 /** find all file textures, set their paths to the relative locations, then lock them **/
@@ -533,25 +533,25 @@ global proc boLockFileTextures(string $objs[], int $lock, int $dispConfirm) {
 				//strip everything before sourceimages
 				$ftn = `substitute "^.*(sourceimages)" $ftn "sourceimages"`;
 			}
-			
+
 			//set attr then lock
 			if ($lock) {
 				setAttr -l (!$lock) ($file+".ftn");
 				setAttr -typ "string" ($file+".ftn") $ftn;
 			}
 			setAttr -l ($lock) ($file+".ftn");
-			
+
 			$lockCount ++;
 			$ftns[size($ftns)] = $ftn;
 	}
-	
+
 	string $verbs[] = ($lock ? {"lock", "locked", "Locked"} : {"unlock", "unlocked", "Unlocked"});
 	if ($lockCount) {
 		if ($dispConfirm) {
 			string $title = ("Files "+$verbs[2]);
 			string $msg = ($lockCount+" file node texture(s) "+$verbs[1]+":\n");
 			for ($ftn in $ftns) {
-				$msg += ("  "+$ftn+"\n");	
+				$msg += ("  "+$ftn+"\n");
 			}
 			confirmDialog -b "Ok" -db "Ok" -m $msg -t $title;
 		} else {
@@ -581,7 +581,7 @@ global proc boModifyAttrs(string $objs[], string $attrs[], int $l, int $k, int $
 *   k: boolean, whether or not to make the attr keyable
 *   cb: boolean, whether or not the attribute will be visible in the channel box
 **/
-	
+
 	if ($attrs[0] == "[allXforms]") {
 		$attrs = {"tx", "ty", "tz", "rx", "ry", "rz", "sx", "sy", "sz"};
 	} else if ($attrs[0] == "[all]") {
@@ -620,7 +620,7 @@ global proc butilFrameRenderTimerPost() {
 
 
 global proc butilRenameShapeNodes(string $objs[]) {
-/** 
+/**
 * Given a list of objects, finds the shape nodes and renames them to match
 * common transform/shape naming relations
 * ie. transformName and transformNameShape
@@ -649,23 +649,20 @@ global proc boParentShape(int $add) {
 	string $selList[] = `ls -sl`;
 	if (size($selList) < 2)
 		return;
-	
+
 	int $parentCount = 0;
 	string $trans = $selList[size($selList)-1];
-	
+
 	string $cmdPrefix = ("parent " + ($add ? "-add " : "-r ") + "-s ");
 	for ($i = 0; $i < size($selList)-1; $i++) {
 		string $cmd = $cmdPrefix + $selList[$i] + " " + $trans;
 		catch(`eval($cmd)`);
 		$parentCount++;
 	}
-	
+
 	if ($parentCount) {
 		string $verb = ($add ? "instanced" : "moved");
 		print ("// "+$parentCount+" shape(s) successfully "+$verb+" to "+$trans+"\n");
 		select -r $trans;
 	}
 }
-
-
-

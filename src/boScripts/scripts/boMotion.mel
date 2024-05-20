@@ -1,19 +1,19 @@
 /*
     Motion
     0.8.2
-    
+
     Copyright © 2010 Bohdon Sayre
 	All Rights Reserved.
 	bsayre@c.ringling.edu
-    
+
     Description:
         Allows you to track the movement of any vertex over time.
-    
+
     unique prefix: bmo
 
 	Version 0.8:
 			Starting development, not bug tested
-	
+
 	Feel free to email me with any bugs, comments, or requests!
 */
 
@@ -21,13 +21,13 @@
 global proc boMotion() {
 	//window name
 	string $bmoWin = "bmoWin";
-	
+
 	//check for pre-existing window
 	if (`window -exists $bmoWin`) deleteUI -window $bmoWin;
-	
+
 	//create window
 	window  -w 200 -h 200 -s 1 -rtf 1 -mb 1 -mxb 0 -mnc "window -e -t \"Motion 0.8.2\" bmoWin;" -t "Motion 0.8.2" $bmoWin;
-	
+
 	string $form = `formLayout -nd 100`;
 		textScrollList -w 150 -h 160 -ams 1 bmoObjectList;
         button -w 75 -l "add"
@@ -36,7 +36,7 @@ global proc boMotion() {
         button -w 75 -l "remove"
             -c "for ($itr in `textScrollList -q -si bmoObjectList`) {textScrollList -e -ri $itr bmoObjectList;}"
             bmoObjectClearBtn;
-        
+
 		colorIndexSliderGrp -cw3 1 60 106 -label "" -min 1 -max 32 -value 17 bmoCurveColorSlider;
 
 		button -w 150 -bgc .7 .8 .9 -l "Create Motion Path"
@@ -48,7 +48,7 @@ global proc boMotion() {
 		button -w 150 -bgc .9 .55 .5 -l "Delete All Paths"
             -c "delete bmoMotionPath_grp"
             bmoDeleteMotionPathBtn;
-    
+
     formLayout -e
         -af bmoObjectList "top" 0
         -af bmoObjectList "left" 0
@@ -73,16 +73,16 @@ global proc boMotion() {
         -af bmoDeleteMotionPathBtn "right" 0
         -af bmoDeleteMotionPathBtn "bottom" 0
         $form;
-    
+
 	window -e -w 158 $bmoWin;
 	showWindow $bmoWin;
 }
 
 global proc bmoObjectAdd() {
 	string $selList[] = `ls -fl -sl`;
-	
+
 	if (!`size($selList)`) return;
-	
+
 	for ($i in $selList) {
 		textScrollList -e -append $i bmoObjectList;
 	}
@@ -91,33 +91,33 @@ global proc bmoObjectAdd() {
 
 global proc bmoCreateMotionPath() {
 	string $objList[] = `textScrollList -q -si bmoObjectList`;
-	
+
 	if (!`size($objList)`) return ;
-	
+
 	int $st = `playbackOptions -q -min`;
 	int $et = `playbackOptions -q -max`;
 	int $curTime = `currentTime -q`;
 	int $curveColor = `colorIndexSliderGrp -q -v bmoCurveColorSlider`;
 	string $bmoCurve;
-	
+
 	refresh -su 1;
-	for ($obj in $objList) {		
+	for ($obj in $objList) {
 		string $niceNameObj = `substitute "\\." $obj "_"`;
 		$niceNameObj = `substitute "\\[" $niceNameObj ""`;
 		$niceNameObj = `substitute "]" $niceNameObj ""`;
-		
+
 		//check for existing curve, and delete
 		if (`objExists ($niceNameObj+"_bmoMPath")`)
 			delete ($niceNameObj+"_bmoMPath");
-	
+
 		//iterate through time and grab pointPositions
 		for ($t = $st; $t <= $et; $t++) {
 			//set the time
 			currentTime $t;
-			
+
 			//get position of point
 			float $pos[] = `pointPosition $obj`;
-			
+
 			//first time actions
 			if ($t == $st) {
 				//create motion curve
@@ -130,10 +130,10 @@ global proc bmoCreateMotionPath() {
 				//create parent group if needed
 				if (!`objExists "bmoMotionPath_grp"`)
 					group -em -n "bmoMotionPath_grp";
-				
+
 				setAttr ($bmoCurve+".overrideEnabled") 1;
 				setAttr ($bmoCurve+".overrideColor") ($curveColor-1);
-				
+
 				parent $bmoCurve bmoMotionPath_grp;
 				toggle -controlVertex $bmoCurve;
 			}
@@ -141,4 +141,3 @@ global proc bmoCreateMotionPath() {
 	}
 	refresh -su 0;
 }
-
