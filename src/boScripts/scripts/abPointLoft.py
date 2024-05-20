@@ -9,14 +9,14 @@ __author__ = "Ahdom and Bohdon Sayre"
 
 import logging
 
-from pymel.core import *
+import pymel.core as pm
 
 logger = logging.getLogger("Point Loft")
 logger.setLevel(logging.DEBUG)
 
 
 def doIt():
-    selList = ls(sl=True, fl=True)
+    selList = pm.ls(sl=True, fl=True)
     myPointLoft = PointLoft()
     myPointLoft.surf = selList[-1]  # get the last selected object (the surface)
     myPointLoft.pts = selList[:-1]  # get all but the last selected objects (the verts)
@@ -46,33 +46,33 @@ class Gui(object):
         self.create()
 
     def create(self):
-        if window(self.winName, exists=True):
-            deleteUI(self.winName)
+        if pm.window(self.winName, exists=True):
+            pm.deleteUI(self.winName)
 
-        with window(self.winName, t=self.title, mxb=False) as self.win:
-            template = uiTemplate("abPointLoftTemplate", force=True)
-            template.define(button, w=40, h=20, bgc=[1.4 * v for v in [0.18, 0.21, 0.25]])
-            template.define(columnLayout, rs=12, adj=True)
-            template.define(formLayout, nd=100)
-            template.define(frameLayout, mw=4, mh=4, bs="out", bgc=[0.18, 0.21, 0.25])
+        with pm.window(self.winName, t=self.title, mxb=False) as self.win:
+            template = pm.uiTemplate("abPointLoftTemplate", force=True)
+            template.define(pm.button, w=40, h=20, bgc=[1.4 * v for v in [0.18, 0.21, 0.25]])
+            template.define(pm.columnLayout, rs=12, adj=True)
+            template.define(pm.formLayout, nd=100)
+            template.define(pm.frameLayout, mw=4, mh=4, bs="out", bgc=[0.18, 0.21, 0.25])
             with template:
-                with formLayout() as mainForm:
-                    with columnLayout() as mainCol:
-                        with frameLayout(l="Points (0)") as ptsFrame:
-                            with formLayout() as form1:
-                                ptsField = textField(ed=False)
-                                ptsBtn = button(l="Get", c=Callback(self.getPts))
-                                popupMenu(p=ptsBtn)
-                                menuItem(l="Select Points", c=Callback(self.selectPts))
-                        with frameLayout(l="Surface") as surfFrame:
-                            with formLayout() as form2:
-                                surfField = textField(ed=False)
-                                surfBtn = button(l="Get", c=Callback(self.getSurf))
-                        with frameLayout(l="Axis") as axisFrame:
-                            with formLayout() as form3:
-                                axisRadioGrp = radioButtonGrp(
+                with pm.formLayout() as mainForm:
+                    with pm.columnLayout() as mainCol:
+                        with pm.frameLayout(l="Points (0)") as ptsFrame:
+                            with pm.formLayout() as form1:
+                                ptsField = pm.textField(ed=False)
+                                ptsBtn = pm.button(l="Get", c=pm.Callback(self.getPts))
+                                pm.popupMenu(p=ptsBtn)
+                                pm.menuItem(l="Select Points", c=pm.Callback(self.selectPts))
+                        with pm.frameLayout(l="Surface") as surfFrame:
+                            with pm.formLayout() as form2:
+                                surfField = pm.textField(ed=False)
+                                surfBtn = pm.button(l="Get", c=pm.Callback(self.getSurf))
+                        with pm.frameLayout(l="Axis") as axisFrame:
+                            with pm.formLayout() as form3:
+                                axisRadioGrp = pm.radioButtonGrp(
                                     nrb=4,
-                                    cc=Callback(self.axisChange),
+                                    cc=pm.Callback(self.axisChange),
                                     sl=2,
                                     l1="X",
                                     l2="Y",
@@ -80,19 +80,19 @@ class Gui(object):
                                     l4="N",
                                     cw4=[30, 30, 30, 30],
                                 )
-                    runBtn = button(l="Run", h=30, c=Callback(self.run))
+                    runBtn = pm.button(l="Run", h=30, c=pm.Callback(self.run))
 
-                formLayout(
+                pm.formLayout(
                     form1, e=True, af=[(ptsField, "left", 0), (ptsBtn, "right", 0)], ac=[(ptsField, "right", 4, ptsBtn)]
                 )
-                formLayout(
+                pm.formLayout(
                     form2,
                     e=True,
                     af=[(surfField, "left", 0), (surfBtn, "right", 0)],
                     ac=[(surfField, "right", 4, surfBtn)],
                 )
-                formLayout(form3, e=True, ap=[(axisRadioGrp, "left", -70, 50)])
-                formLayout(
+                pm.formLayout(form3, e=True, ap=[(axisRadioGrp, "left", -70, 50)])
+                pm.formLayout(
                     mainForm,
                     e=True,
                     af=[
@@ -119,16 +119,16 @@ class Gui(object):
         self.axisChange()
 
     def getPts(self):
-        self.pts = ls(sl=True, fl=True)
+        self.pts = pm.ls(sl=True, fl=True)
         ptsDisplayList = [str(vert.name()) for vert in self.pts]
         self.ui["ptsField"].setText(str(ptsDisplayList))
         self.ui["ptsFrame"].setLabel("Points (%d)" % len(self.pts))
 
     def selectPts(self):
-        select(self.pts)
+        pm.select(self.pts)
 
     def getSurf(self):
-        self.surf = ls(sl=True)[0]
+        self.surf = pm.ls(sl=True)[0]
         self.ui["surfField"].setText(self.surf)
 
     def axisChange(self):
@@ -182,21 +182,21 @@ class PointLoft(object):
         moveCount = 0
         failCount = 0
         for pt in self.pts:
-            ptPos = pointPosition(pt)
+            ptPos = pm.pointPosition(pt)
             ptPos2 = ptPos - ptDelta
-            c = curve(d=1, p=[ptPos2, ptPos], k=[0, 1])
+            c = pm.curve(d=1, p=[ptPos2, ptPos], k=[0, 1])
             if self.useNormal:
-                proj = projectCurve(c, self.surf, un=True)
+                proj = pm.projectCurve(c, self.surf, un=True)
             else:
-                proj = projectCurve(c, self.surf, d=axis)
+                proj = pm.projectCurve(c, self.surf, d=axis)
             projC = proj[0].listConnections()[1]
-            if objExists("%s.cv[0]" % projC):
-                goalPt = pointPosition("%s.cv[0]" % projC)
-                move(pt, goalPt, a=True, ws=True)
+            if pm.objExists("%s.cv[0]" % projC):
+                goalPt = pm.pointPosition("%s.cv[0]" % projC)
+                pm.move(pt, goalPt, a=True, ws=True)
                 moveCount += 1
             else:
                 failCount += 1
-            delete(c, proj)
+            pm.delete(c, proj)
 
         logger.info("%d point(s) were moved successfully" % moveCount)
         if failCount > 0:

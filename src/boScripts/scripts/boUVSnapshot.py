@@ -19,7 +19,7 @@ import os
 import subprocess
 import sys
 
-from pymel.core import *
+import pymel.core as pm
 
 
 class GUI(object):
@@ -28,45 +28,45 @@ class GUI(object):
         self.build()
 
     def build(self):
-        if window(self.winName, ex=True):
-            deleteUI(self.winName, wnd=True)
+        if pm.window(self.winName, ex=True):
+            pm.deleteUI(self.winName, wnd=True)
 
-        if not windowPref(self.winName, ex=True):
-            windowPref(self.winName, tlc=(200, 200))
-        windowPref(self.winName, e=True, w=240, h=180)
+        if not pm.windowPref(self.winName, ex=True):
+            pm.windowPref(self.winName, tlc=(200, 200))
+        pm.windowPref(self.winName, e=True, w=240, h=180)
 
-        with window(self.winName, rtf=True, mb=False, mxb=False, t="UV Snapshot") as self.win:
-            with formLayout(nd=100) as form:
-                sizeTxt = text(l="Size")
-                self.sizeField = intField(v=1024, w=50)
-                self.sizeSlider = intSlider(w=100, min=4, max=13, v=10, s=1, dc=Callback(self.updateSizeField))
+        with pm.window(self.winName, rtf=True, mb=False, mxb=False, t="UV Snapshot") as self.win:
+            with pm.formLayout(nd=100) as form:
+                sizeTxt = pm.text(l="Size")
+                self.sizeField = pm.intField(v=1024, w=50)
+                self.sizeSlider = pm.intSlider(w=100, min=4, max=13, v=10, s=1, dc=pm.Callback(self.updateSizeField))
 
-                sep1 = separator(h=4, st="in")
-                typeTxt = text(l="File Type")
-                self.fmtOpts = optionMenu(w=60)
+                sep1 = pm.separator(h=4, st="in")
+                typeTxt = pm.text(l="File Type")
+                self.fmtOpts = pm.optionMenu(w=60)
                 for x in ["iff", "jpg", "png", "tga", "tif"]:
-                    menuItem(l=x)
+                    pm.menuItem(l=x)
                 self.fmtOpts.setValue("tif")
 
-                self.antiAliasCheck = checkBox(l="Anti-Alias Lines", v=True, al="left")
+                self.antiAliasCheck = pm.checkBox(l="Anti-Alias Lines", v=True, al="left")
 
-                sep2 = separator(h=4, st="in")
-                self.dstOpts = optionMenu(l="Destination", w=175)
+                sep2 = pm.separator(h=4, st="in")
+                self.dstOpts = pm.optionMenu(l="Destination", w=175)
                 for x in ["sourceimages", "images"]:
-                    menuItem(l=x)
-                popupMenu(p=self.dstOpts, mm=True, b=3)
-                menuItem("Open", c=Callback(self.openDir))
+                    pm.menuItem(l=x)
+                pm.popupMenu(p=self.dstOpts, mm=True, b=3)
+                pm.menuItem("Open", c=pm.Callback(self.openDir))
 
-                infoTxt1 = text(en=False, al="center", l="files will be saved as uvOut_objectName.ext")
+                infoTxt1 = pm.text(en=False, al="center", l="files will be saved as uvOut_objectName.ext")
 
-                runBtn = button(
+                runBtn = pm.button(
                     l="Output UVs",
                     ann="Select multiple objects, then click Output UVs",
-                    c=Callback(self.snapshot),
+                    c=pm.Callback(self.snapshot),
                     h=26,
                 )
 
-            formLayout(
+            pm.formLayout(
                 form,
                 e=True,
                 af=[
@@ -108,14 +108,14 @@ class GUI(object):
 
     def openDir(self):
         dst = self.dstOpts.getValue()
-        projDir = workspace(q=True, fn=True)
+        projDir = pm.workspace(q=True, fn=True)
         outDir = os.path.join(projDir, dst)
         if os.path.isdir(outDir):
             if sys.platform == "win32":
                 subprocess.Popen(["explorer.exe", os.path.normpath(outDir)])
 
     def snapshot(self):
-        sel = selected()
+        sel = pm.selected()
         dst = self.dstOpts.getValue()
         fmt = self.fmtOpts.getValue()
         size = self.sizeField.getValue()
@@ -140,19 +140,19 @@ def snapshot(objs, dst, fmt, size, aa):
     if size > 8192:
         raise ValueError("Size is too large ({0}). Limit is 8192".format(size))
     # save sel
-    prevSel = selected()
+    prevSel = pm.selected()
     result = []
-    projDir = workspace(q=True, fn=True)
+    projDir = pm.workspace(q=True, fn=True)
     outDir = os.path.join(projDir, dst)
     for obj in objs:
-        select(obj)
+        pm.select(obj)
         outName = "uvOut_{0}.{1}".format(obj.shortName().replace(":", "_"), fmt)
         outPath = os.path.join(outDir, outName)
-        refresh()
-        uvSnapshot(o=True, aa=aa, ff=fmt, xr=size, yr=size, n=outPath)
+        pm.refresh()
+        pm.uvSnapshot(o=True, aa=aa, ff=fmt, xr=size, yr=size, n=outPath)
         result.append(outPath)
     # reselect
-    select(prevSel)
+    pm.select(prevSel)
     # print results
     if len(result) == 0:
         print("no uv snapshots were output..")
